@@ -1,30 +1,28 @@
-# MAX Admin MVP v17 — No vercel.json Fix
+# MAX Admin MVP v18 Schema Fix
 
-Эта версия исправляет ошибку Vercel `Invalid vercel.json file provided`.
+Исправление ошибки Supabase `PGRST204: Could not find the 'crm_status' column`.
 
-Главное изменение: файл `vercel.json` удалён полностью. Для этого проекта он не нужен: Vercel сам отдаёт `public/index.html`, `public/miniapp/index.html` и одну API-функцию `api/[...route].js`.
+Что сделано:
 
-## Важно при обновлении GitHub
+- добавлен fallback: если Supabase schema cache ещё не видит новые колонки, заявка всё равно сохраняется в старые базовые поля;
+- добавлен файл `supabase/hotfix-miniapp-columns.sql`;
+- версия API: `v18-schema-fix`;
+- `vercel.json` отсутствует, проект совместим с Vercel Hobby;
+- в папке `api` должна быть только одна функция: `api/[...route].js`.
 
-В корне репозитория НЕ должно быть файла:
+## Обязательный быстрый фикс
 
-```text
-vercel.json
-```
-
-Если он остался от старой версии, удалите его на GitHub.
-
-В папке `api` должен быть только один файл:
+В Supabase → SQL Editor выполните файл:
 
 ```text
-api/[...route].js
+supabase/hotfix-miniapp-columns.sql
 ```
 
-Старые API-файлы нужно удалить, иначе Vercel Hobby снова может выдать лимит Serverless Functions.
+Потом сделайте Redeploy на Vercel.
 
 ## Проверка
 
-После деплоя откройте:
+Откройте:
 
 ```text
 https://adminka-max.vercel.app/api/version
@@ -33,21 +31,5 @@ https://adminka-max.vercel.app/api/version
 Должно быть:
 
 ```json
-{
-  "ok": true,
-  "version": "v17-no-vercel-json"
-}
+{ "ok": true, "version": "v18-schema-fix" }
 ```
-
-## Supabase
-
-Если SQL из v16 уже запускался, повторно запускать `supabase/schema.sql` не обязательно. Если таблицы `max_miniapp_leads` и `max_crm_leads` ещё не созданы — запустите SQL из файла `supabase/schema.sql`.
-
-## Мини-приложение
-
-Адрес мини-приложения:
-
-```text
-https://adminka-max.vercel.app/miniapp
-```
-
