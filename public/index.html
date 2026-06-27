@@ -311,7 +311,8 @@
 Изготовление и установка мягких окон для беседок, веранд и террас.
 Бесплатный замер. Аккуратный монтаж. Работаем по Омску и области.
 
-Напишите — рассчитаем стоимость по размерам.</textarea>
+Напишите — рассчитаем стоимость по размерам.
+Телефон: 48-98-78</textarea>
 
       <div class="templates" aria-label="Шаблоны">
         <button class="secondary" type="button" data-template="soft">Шаблон: мягкие окна</button>
@@ -340,8 +341,8 @@
         <input id="whatsapp" placeholder="WhatsApp" value="https://wa.me/79039812452" />
         <input id="telegram" placeholder="Telegram" value="https://t.me/Anvar_company" />
         <input id="site" placeholder="Сайт" value="https://мягкиеокна55.рф" />
-        <input id="phone" placeholder="Телефонная ссылка" value="tel:+73812489878" />
       </div>
+      <p class="sub" style="margin-top:10px">MAX принимает в кнопках только ссылки формата http:// или https://. Телефон лучше писать прямо в тексте поста: 48-98-78.</p>
     </section>
 
     <section class="card">
@@ -373,17 +374,20 @@
       {
         key: 'soft',
         title: 'Мягкие окна',
-        text: `Мягкие окна в Омске\n\nИзготовление и установка мягких окон для беседок, веранд и террас.\nПВХ-плёнка, окантовка, люверсы/скобы, аккуратный монтаж.\n\nБесплатный замер. Напишите — рассчитаем стоимость по размерам.`
+        text: `Мягкие окна в Омске\n\nИзготовление и установка мягких окон для беседок, веранд и террас.\nПВХ-плёнка, окантовка, люверсы/скобы, аккуратный монтаж.\n\nБесплатный замер. Напишите — рассчитаем стоимость по размерам.
+Телефон: 48-98-78`
       },
       {
         key: 'eva',
         title: 'EVA коврики',
-        text: `EVA коврики в Омске\n\nИзготовим коврики под ваш автомобиль.\nПодбор по марке, модели и году. Аккуратная окантовка, разные цвета.\n\nНапишите марку авто — рассчитаем стоимость.`
+        text: `EVA коврики в Омске\n\nИзготовим коврики под ваш автомобиль.\nПодбор по марке, модели и году. Аккуратная окантовка, разные цвета.\n\nНапишите марку авто — рассчитаем стоимость.
+Телефон: 48-98-78`
       },
       {
         key: 'promo',
         title: 'Акция',
-        text: `Акция на мягкие окна\n\nДля беседок, веранд и террас.\nЗамер, изготовление и монтаж в Омске и области.\n\nНапишите сегодня — рассчитаем стоимость и подскажем оптимальный вариант крепления.`
+        text: `Акция на мягкие окна\n\nДля беседок, веранд и террас.\nЗамер, изготовление и монтаж в Омске и области.\n\nНапишите сегодня — рассчитаем стоимость и подскажем оптимальный вариант крепления.
+Телефон: 48-98-78`
       }
     ];
 
@@ -421,18 +425,27 @@
         .map((node) => node.dataset.name || node.value);
     }
 
+    function isHttpUrl(url) {
+      return /^https?:\/\//i.test(String(url || '').trim());
+    }
+
     function getButtons() {
       const buttons = [];
+      const invalid = [];
       const map = [
         ['WhatsApp', el('whatsapp').value.trim()],
         ['Telegram', el('telegram').value.trim()],
-        ['Сайт', el('site').value.trim()],
-        ['Позвонить', el('phone').value.trim()]
+        ['Сайт', el('site').value.trim()]
       ];
       for (const [text, url] of map) {
-        if (url) buttons.push({ text, url });
+        if (!url) continue;
+        if (!isHttpUrl(url)) {
+          invalid.push(`${text}: ${url}`);
+          continue;
+        }
+        buttons.push({ text, url });
       }
-      return buttons;
+      return { buttons, invalid };
     }
 
     async function apiFetch(url, options = {}) {
@@ -631,6 +644,11 @@
       if (text.length < 3) return setStatus('Введите текст поста.', 'err');
       if (text.length > 4000) return setStatus('Текст MAX-сообщения должен быть до 4000 символов.', 'err');
 
+      const buttonResult = getButtons();
+      if (buttonResult.invalid.length) {
+        return setStatus('Некорректные ссылки в кнопках. MAX принимает только http:// или https://:\n' + buttonResult.invalid.join('\n') + '\n\nТелефон tel: нужно писать текстом в посте, а не кнопкой.', 'err');
+      }
+
       sendBtn.disabled = true;
       setStatus(imageFile ? 'Готовлю фото и отправляю пост...' : 'Отправляю пост...');
 
@@ -640,7 +658,7 @@
         const data = await apiFetch('/api/send-max-post', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chatIds, text, buttons: getButtons(), imageDataUrl })
+          body: JSON.stringify({ chatIds, text, buttons: buttonResult.buttons, imageDataUrl })
         });
 
         saveLocalHistory({

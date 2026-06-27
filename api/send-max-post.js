@@ -21,7 +21,7 @@ function normalizeButtons(input) {
       text: String(btn?.text || '').trim(),
       url: String(btn?.url || '').trim()
     }))
-    .filter((btn) => btn.text && /^(https?:\/\/|tel:)/i.test(btn.url))
+    .filter((btn) => btn.text && /^https?:\/\//i.test(btn.url))
     .slice(0, 6);
 }
 
