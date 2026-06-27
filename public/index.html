@@ -263,11 +263,12 @@
         <div>
           <label class="title" for="password">Пароль админки</label>
           <input id="password" type="password" placeholder="ADMIN_PASSWORD" autocomplete="current-password" />
+          <p class="sub" style="margin-top:8px">После ввода пароля нажмите Enter или кнопку “Войти / загрузить группы”.</p>
         </div>
         <div>
           <label class="title">Действия</label>
           <div class="row">
-            <button class="secondary" id="loadBtn" type="button">Загрузить группы</button>
+            <button class="secondary" id="loadBtn" type="button">Войти / загрузить группы</button>
             <button class="secondary" id="checkBtn" type="button">Проверить доступ</button>
           </div>
         </div>
@@ -289,7 +290,7 @@
 
     <section class="card">
       <label class="title">Группы MAX</label>
-      <div id="groups" class="groups muted">Введите пароль и нажмите “Загрузить группы”.</div>
+      <div id="groups" class="groups muted">Введите пароль и нажмите “Войти / загрузить группы”.</div>
 
       <div style="height:14px"></div>
       <label class="title">Добавить группу в Supabase</label>
@@ -476,11 +477,9 @@
         if (!getPassword()) return setStatus('Введите пароль админки.', 'err');
         setStatus('Проверяю MAX API, Webhook URL и Supabase...');
         const data = await apiFetch('/api/diagnostics');
-        setStatus('Диагностика:
-' + JSON.stringify(data, null, 2), data.ok ? 'ok' : 'err');
+        setStatus('Диагностика:\n' + JSON.stringify(data, null, 2), data.ok ? 'ok' : 'err');
       } catch (error) {
-        setStatus('Ошибка диагностики:
-' + error.message, 'err');
+        setStatus('Ошибка диагностики:\n' + error.message, 'err');
       }
     }
 
@@ -540,7 +539,7 @@
         const data = await apiFetch('/api/check-chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chatId: chatIds[0] })
+          body: JSON.stringify({ chat_id: chatIds[0] })
         });
         setStatus('Доступ к группе есть:\n' + JSON.stringify(data.data, null, 2), 'ok');
       } catch (error) {
@@ -738,7 +737,21 @@
         .replaceAll("'", '&#039;');
     }
 
-    el('loadBtn').addEventListener('click', async () => { await loadGroups(); await renderHistory(); await loadTemplates(); });
+    async function loginAndLoad() {
+      if (!getPassword()) return setStatus('Введите пароль админки.', 'err');
+      await loadGroups();
+      await renderHistory();
+      await loadTemplates();
+    }
+
+    el('password').addEventListener('keydown', async (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        await loginAndLoad();
+      }
+    });
+
+    el('loadBtn').addEventListener('click', loginAndLoad);
     el('setupWebhookBtn').addEventListener('click', setupWebhook);
     el('listWebhookBtn').addEventListener('click', listWebhooks);
     el('diagBtn').addEventListener('click', runDiagnostics);
