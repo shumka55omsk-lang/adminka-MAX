@@ -238,6 +238,32 @@
       margin-left: 6px;
     }
 
+
+    .scheduled-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .scheduled-item {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .scheduled-item strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .scheduled-item p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.35;
+      white-space: pre-wrap;
+    }
+
     @media (max-width: 720px) {
       .grid { grid-template-columns: 1fr; }
       .top { display: block; }
@@ -254,7 +280,7 @@
     <div class="top">
       <div>
         <h1>Рассылка MAX</h1>
-        <p class="sub">MVP-админка: текст, фото, кнопки, группы, история, Webhook MAX и диагностика API через Supabase.</p>
+        <p class="sub">MVP-админка: текст, фото, кнопки, группы, история, Webhook MAX, диагностика API и расписание через Supabase.</p>
       </div>
     </div>
 
@@ -347,6 +373,21 @@
 
     <section class="card">
       <button id="sendBtn" type="button">Отправить в MAX</button>
+    </section>
+
+    <section class="card">
+      <label class="title">Расписание отправки</label>
+      <p class="sub">Выбери дату и время, нажми “Запланировать”. Отправка произойдёт автоматически через Vercel Cron или внешний cron-сервис. Админку держать открытой не нужно.</p>
+      <div class="grid" style="margin-top:12px">
+        <input id="scheduledAt" type="datetime-local" />
+        <button class="secondary" id="scheduleBtn" type="button">Запланировать пост</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="secondary" id="refreshScheduledBtn" type="button">Обновить расписание</button>
+        <button class="secondary" id="runCronBtn" type="button">Запустить проверку сейчас</button>
+      </div>
+      <div id="scheduledList" class="scheduled-list muted" style="margin-top:12px">Запланированных постов пока нет.</div>
+      <p class="sub" style="margin-top:10px">Время вводится по вашему устройству. Cron проверяет очередь по UTC, но дата сохраняется правильно с учётом вашего часового пояса.</p>
     </section>
 
     <section class="card">
@@ -692,6 +733,141 @@
       }
     }
 
+    function getScheduleIso() {
+      const value = el('scheduledAt').value;
+      if (!value) return null;
+      const date = new Date(value);
+      if (!Number.isFinite(date.getTime())) return null;
+      return date.toISOString();
+    }
+
+    function setDefaultScheduledAt() {
+      const input = el('scheduledAt');
+      if (!input || input.value) return;
+      const date = new Date(Date.now() + 60 * 60 * 1000);
+      date.setSeconds(0, 0);
+      const pad = (n) => String(n).padStart(2, '0');
+      input.value = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    async function schedulePost() {
+      const scheduleBtn = el('scheduleBtn');
+      const chatIds = getSelectedChatIds();
+      const groupNames = getSelectedGroupNames();
+      const text = el('text').value.trim();
+      const imageFile = el('image').files[0] || null;
+      const scheduledAt = getScheduleIso();
+
+      if (!getPassword()) return setStatus('Введите пароль админки.', 'err');
+      const invalidSelected = getInvalidSelectedGroups();
+      if (invalidSelected.length) return setStatus(`Выбрана группа с некорректным chat_id: ${invalidSelected.join(', ')}.`, 'err');
+      if (!chatIds.length) return setStatus('Выберите хотя бы одну группу.', 'err');
+      if (text.length < 3) return setStatus('Введите текст поста.', 'err');
+      if (text.length > 4000) return setStatus('Текст MAX-сообщения должен быть до 4000 символов.', 'err');
+      if (!scheduledAt) return setStatus('Выберите дату и время отправки.', 'err');
+      if (new Date(scheduledAt).getTime() < Date.now() - 60000) return setStatus('Нельзя запланировать пост в прошлом.', 'err');
+
+      const buttonResult = getButtons();
+      if (buttonResult.invalid.length) {
+        return setStatus('Некорректные ссылки в кнопках. MAX принимает только http:// или https://:\n' + buttonResult.invalid.join('\n'), 'err');
+      }
+
+      scheduleBtn.disabled = true;
+      setStatus(imageFile ? 'Готовлю фото и сохраняю пост в расписание...' : 'Сохраняю пост в расписание...');
+
+      try {
+        const imageDataUrl = await fileToDataUrl(imageFile);
+        const data = await apiFetch('/api/schedule-post', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chatIds, groupNames, text, buttons: buttonResult.buttons, imageDataUrl, scheduledAt })
+        });
+        await renderScheduledPosts();
+        setStatus('Пост запланирован:\n' + JSON.stringify(data.scheduled, null, 2), 'ok');
+      } catch (error) {
+        setStatus('Ошибка планирования поста:\n' + error.message, 'err');
+      } finally {
+        scheduleBtn.disabled = false;
+      }
+    }
+
+    async function readScheduledPosts() {
+      if (!getPassword()) return [];
+      const data = await apiFetch('/api/scheduled-posts');
+      return Array.isArray(data.scheduled) ? data.scheduled : [];
+    }
+
+    async function renderScheduledPosts() {
+      const box = el('scheduledList');
+      if (!box) return;
+      if (!getPassword()) {
+        box.className = 'scheduled-list muted';
+        box.textContent = 'Введите пароль, чтобы загрузить расписание.';
+        return;
+      }
+
+      try {
+        const items = await readScheduledPosts();
+        if (!items.length) {
+          box.className = 'scheduled-list muted';
+          box.textContent = 'Запланированных постов пока нет.';
+          return;
+        }
+
+        box.className = 'scheduled-list';
+        box.innerHTML = items.map((item) => {
+          const date = item.scheduled_at ? new Date(item.scheduled_at).toLocaleString('ru-RU') : 'без даты';
+          const groups = Array.isArray(item.group_names) && item.group_names.length
+            ? item.group_names.join(', ')
+            : (Array.isArray(item.chat_ids) ? item.chat_ids.join(', ') : '');
+          const canCancel = item.status === 'scheduled';
+          return `
+            <div class="scheduled-item">
+              <strong>${escapeHtml(date)} <span class="pill">${escapeHtml(item.status || '')}</span> <span class="pill">${item.has_image ? 'с фото' : 'без фото'}</span></strong>
+              <div class="muted">Группы: ${escapeHtml(groups)}</div>
+              <div class="muted">Попыток: ${Number(item.attempt_count || 0)}${item.last_error ? ' · Ошибка: ' + escapeHtml(item.last_error) : ''}</div>
+              <p>${escapeHtml(item.post_text || '').slice(0, 400)}</p>
+              ${canCancel ? `<button class="danger cancel-scheduled" data-id="${escapeHtml(item.id)}" type="button" style="width:auto;margin-top:10px">Отменить</button>` : ''}
+            </div>
+          `;
+        }).join('');
+
+        box.querySelectorAll('.cancel-scheduled').forEach((button) => {
+          button.addEventListener('click', async () => {
+            await cancelScheduledPost(button.dataset.id);
+          });
+        });
+      } catch (error) {
+        box.className = 'scheduled-list muted';
+        box.textContent = 'Ошибка загрузки расписания: ' + error.message;
+      }
+    }
+
+    async function cancelScheduledPost(id) {
+      if (!id) return;
+      try {
+        setStatus('Отменяю запланированный пост...');
+        const data = await apiFetch('/api/scheduled-posts?id=' + encodeURIComponent(id), { method: 'DELETE' });
+        await renderScheduledPosts();
+        setStatus('Запланированный пост отменён:\n' + JSON.stringify(data, null, 2), 'ok');
+      } catch (error) {
+        setStatus('Ошибка отмены поста:\n' + error.message, 'err');
+      }
+    }
+
+    async function runCronNow() {
+      try {
+        if (!getPassword()) return setStatus('Введите пароль админки.', 'err');
+        setStatus('Проверяю очередь расписания и отправляю просроченные посты...');
+        const data = await apiFetch('/api/cron-send-scheduled?limit=5', { method: 'POST' });
+        await renderScheduledPosts();
+        await renderHistory();
+        setStatus('Проверка расписания выполнена:\n' + JSON.stringify(data, null, 2), data.results?.some((r) => !r.ok) ? 'err' : 'ok');
+      } catch (error) {
+        setStatus('Ошибка проверки расписания:\n' + error.message, 'err');
+      }
+    }
+
     function saveLocalHistory(item) {
       const history = readLocalHistory();
       history.unshift(item);
@@ -794,6 +970,7 @@
       if (!getPassword()) return setStatus('Введите пароль админки.', 'err');
       await loadGroups();
       await renderHistory();
+      await renderScheduledPosts();
       await loadTemplates();
     }
 
@@ -811,14 +988,19 @@
     el('checkBtn').addEventListener('click', checkAccess);
     el('addGroupBtn').addEventListener('click', addGroup);
     el('sendBtn').addEventListener('click', sendPost);
+    el('scheduleBtn').addEventListener('click', schedulePost);
+    el('refreshScheduledBtn').addEventListener('click', renderScheduledPosts);
+    el('runCronBtn').addEventListener('click', runCronNow);
     el('image').addEventListener('change', updateImagePreview);
     el('clearImageBtn').addEventListener('click', clearImage);
     el('refreshHistoryBtn').addEventListener('click', renderHistory);
     el('clearHistoryBtn').addEventListener('click', clearHistory);
 
     updateWebhookUrl();
+    setDefaultScheduledAt();
     renderTemplateButtons();
     renderHistory();
+    renderScheduledPosts();
   </script>
 </body>
 </html>

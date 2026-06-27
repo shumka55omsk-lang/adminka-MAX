@@ -125,3 +125,44 @@ begin
       add constraint max_groups_chat_id_not_zero check (chat_id <> 0);
   end if;
 end $$;
+
+-- v11 scheduler: запланированные посты.
+create table if not exists public.max_scheduled_posts (
+  id uuid primary key default gen_random_uuid(),
+  post_text text not null,
+  chat_ids bigint[] not null,
+  group_names text[] not null default '{}'::text[],
+  buttons jsonb not null default '[]'::jsonb,
+  image_data_url text,
+  has_image boolean not null default false,
+  scheduled_at timestamptz not null,
+  status text not null default 'scheduled',
+  sent_at timestamptz,
+  last_error text,
+  attempt_count integer not null default 0,
+  result jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint max_scheduled_posts_status_check check (status in ('scheduled', 'processing', 'sent', 'failed', 'cancelled')),
+  constraint max_scheduled_posts_chat_ids_not_empty check (array_length(chat_ids, 1) is not null),
+  constraint max_scheduled_posts_chat_ids_not_zero check (not (0 = any(chat_ids)))
+);
+
+alter table public.max_scheduled_posts add column if not exists group_names text[] not null default '{}'::text[];
+alter table public.max_scheduled_posts add column if not exists image_data_url text;
+alter table public.max_scheduled_posts add column if not exists has_image boolean not null default false;
+alter table public.max_scheduled_posts add column if not exists sent_at timestamptz;
+alter table public.max_scheduled_posts add column if not exists last_error text;
+alter table public.max_scheduled_posts add column if not exists attempt_count integer not null default 0;
+alter table public.max_scheduled_posts add column if not exists result jsonb;
+alter table public.max_scheduled_posts add column if not exists updated_at timestamptz not null default now();
+
+alter table public.max_scheduled_posts enable row level security;
+
+create index if not exists max_scheduled_posts_due_idx on public.max_scheduled_posts(status, scheduled_at);
+create index if not exists max_scheduled_posts_created_at_idx on public.max_scheduled_posts(created_at desc);
+
+drop trigger if exists max_scheduled_posts_set_updated_at on public.max_scheduled_posts;
+create trigger max_scheduled_posts_set_updated_at
+before update on public.max_scheduled_posts
+for each row execute function public.set_updated_at();

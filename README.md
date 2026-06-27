@@ -1,89 +1,19 @@
-# MAX Admin MVP v8 — diagnostics fix
-
-Исправление v8: функция `/api/diagnostics` больше не падает с `status: 500` из-за неправильного импорта Supabase. Также интерфейс теперь показывает сырой ответ сервера, если API вернул не JSON.
-
-# MAX Admin MVP v7 — TLS fix for Vercel
-
-Эта версия исправляет проблему Vercel → MAX API:
-
-```json
-UNABLE_TO_GET_ISSUER_CERT_LOCALLY
-unable to get local issuer certificate
-```
-
-Причина: `platform-api2.max.ru` может использовать цепочку сертификатов, которой Node.js/Vercel по умолчанию не доверяет. В MAX-документации указано, что при переходе на `platform-api2.max.ru` нужно добавить сертификат Минцифры в список доверенных.
-
-## Что попробовать сначала
-
-В Vercel поставьте:
-
-```env
-MAX_API_BASE_URL=https://platform-api.max.ru
-MAX_TLS_MODE=default
-```
-
-Сделайте **Redeploy** и нажмите в админке **Диагностика MAX API**.
-
-## Если нужен именно platform-api2.max.ru
-
-Вариант для production: добавить официальный CA в переменную:
-
-```env
-MAX_CA_CERT_PEM=-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----
-```
-
-или в base64:
-
-```env
-MAX_CA_CERT_BASE64=...
-```
-
-Временный тестовый вариант, если нужно быстро проверить бота:
-
-```env
-MAX_API_BASE_URL=https://platform-api2.max.ru
-MAX_TLS_MODE=insecure
-```
-
-После теста лучше не оставлять `insecure`, а перейти на CA или VPS/сервер, где сертификат Минцифры установлен в доверенные.
-
----
-
-# MAX Admin MVP v5 + Supabase + Webhook
+# MAX Admin MVP v11 — расписание постов
 
 Админка для рассылки постов в группы MAX через официального бота.
 
-## Что добавлено в v4
+Возможности:
 
-```text
-✅ автоматическое получение chat_id через Webhook MAX
-✅ автосохранение групп в Supabase при событии bot_added / message_created
-✅ отключение группы при событии bot_removed
-✅ таблица событий max_webhook_events для диагностики
-✅ кнопка “Подключить Webhook” прямо в админке
-✅ кнопка “Проверить подписки”
-```
+- отправка поста сейчас;
+- фото к посту;
+- кнопки только `http://` / `https://`;
+- группы из Supabase и Webhook MAX;
+- история отправок;
+- запланированные посты;
+- ручной запуск проверки расписания;
+- endpoint для Vercel Cron или внешнего cron-сервиса.
 
-## Структура
-
-```text
-public/index.html                — веб-админка
-api/_max.js                      — общие настройки MAX API
-api/_supabase.js                 — общий клиент Supabase через REST
-api/_logs.js                     — запись истории отправок
-api/groups.js                    — группы: получить / добавить / отключить
-api/templates.js                 — шаблоны: получить / сохранить
-api/history.js                   — история: получить / очистить
-api/check-chat.js                — проверка доступа бота к группе
-api/send-max-post.js             — отправка поста с текстом, фото и кнопками
-api/max-webhook.js               — endpoint, куда MAX отправляет события
-api/webhook-subscription.js      — подключение и проверка Webhook-подписок
-supabase/schema.sql              — SQL для создания/обновления таблиц
-.env.example                     — пример переменных окружения
-vercel.json                      — настройки Vercel
-```
-
-## 1. Создать или обновить таблицы Supabase
+## 1. Обновление Supabase
 
 Откройте:
 
@@ -91,7 +21,7 @@ vercel.json                      — настройки Vercel
 Supabase → SQL Editor → New query
 ```
 
-Вставьте весь файл:
+Вставьте содержимое файла:
 
 ```text
 supabase/schema.sql
@@ -99,191 +29,131 @@ supabase/schema.sql
 
 Нажмите `Run`.
 
-Будут созданы/обновлены таблицы:
+После этого появится новая таблица:
 
 ```text
-max_groups          — группы MAX
-max_templates       — шаблоны постов
-max_send_logs       — история отправок
-max_webhook_events  — входящие события Webhook
+max_scheduled_posts
 ```
 
-Если таблицы от v3 уже были созданы, этот SQL безопасно добавит новые поля и новую таблицу.
+## 2. Переменные Vercel
 
-## 2. Добавить переменные в Vercel
-
-В Vercel откройте:
+Оставьте старые переменные:
 
 ```text
-Project → Settings → Environment Variables
+MAX_BOT_TOKEN=...
+ADMIN_PASSWORD=...
+MAX_API_BASE_URL=https://platform-api.max.ru
+MAX_TLS_MODE=default
+SUPABASE_URL=...
+SUPABASE_SERVICE_ROLE_KEY=...
+PUBLIC_BASE_URL=https://adminka-max.vercel.app
+MAX_WEBHOOK_SECRET=...
 ```
 
-Добавьте:
+Добавьте новую переменную:
 
 ```text
-MAX_BOT_TOKEN = токен бота MAX
-ADMIN_PASSWORD = пароль для админки
-MAX_API_BASE_URL = https://platform-api2.max.ru
-PUBLIC_BASE_URL = https://your-project.vercel.app
-MAX_WEBHOOK_SECRET = свой_секрет_без_пробелов
-SUPABASE_URL = https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY = service_role key из Supabase
+CRON_SECRET=случайная_строка_минимум_16_символов
 ```
 
-Важно:
+Пример:
 
 ```text
-SUPABASE_SERVICE_ROLE_KEY — только service_role, не anon public key.
-MAX_WEBHOOK_SECRET — только латиница, цифры, _ или -, длина 5-256 символов.
-PUBLIC_BASE_URL — полный HTTPS-адрес админки на Vercel.
+CRON_SECRET=max-cron-8fb7a236c98d42d1
 ```
 
-## 3. Подключить Webhook
+После изменения переменных обязательно сделайте `Redeploy`.
 
-После деплоя:
+## 3. Как работает расписание
+
+Админка сохраняет пост в Supabase в таблицу `max_scheduled_posts` со статусом:
 
 ```text
-1. Открыть сайт админки
-2. Ввести ADMIN_PASSWORD
-3. Проверить, что в поле Webhook указан адрес вида:
-   https://your-project.vercel.app/api/max-webhook
-4. Нажать “Подключить Webhook”
-5. Нажать “Проверить подписки”
+scheduled
 ```
 
-Админка сама отправит запрос в MAX:
+Cron вызывает endpoint:
 
 ```text
-POST /subscriptions
+/api/cron-send-scheduled
 ```
 
-И подпишется на события:
+Endpoint выбирает просроченные посты, отправляет их через MAX API и меняет статус:
 
 ```text
-bot_added
-bot_removed
-chat_title_changed
-message_created
+sent / failed / cancelled
 ```
 
-## 4. Как теперь получить chat_id автоматически
+## 4. Вариант A — Vercel Pro Cron
+
+Если у вас Vercel Pro, можно использовать встроенный Vercel Cron.
+
+Замените `vercel.json` содержимым из файла:
 
 ```text
-1. Добавьте бота в группу MAX
-2. Напишите в группе любое сообщение или дождитесь события bot_added
-3. MAX отправит событие на /api/max-webhook
-4. Endpoint сохранит chat_id в Supabase → max_groups
-5. В админке нажмите “Загрузить группы”
+vercel.pro-cron.example.json
 ```
 
-Если бот удалён из группы, событие `bot_removed` пометит группу как неактивную.
-
-## 5. Ручное добавление группы всё ещё работает
-
-```text
-1. Ввести название группы
-2. Вставить chat_id
-3. Нажать “Добавить / обновить группу”
-```
-
-Ручной способ нужен, если Webhook ещё не подключён.
-
-## 6. Как пользоваться рассылкой
-
-```text
-1. Открыть админку
-2. Ввести пароль
-3. Нажать “Загрузить группы”
-4. Выбрать группы галочками
-5. Написать текст поста
-6. При необходимости прикрепить фото
-7. Проверить кнопки WhatsApp / Telegram / сайт / звонок
-8. Нажать “Отправить в MAX”
-```
-
-После отправки в `max_send_logs` появятся строки по каждой группе.
-
-## 7. Диагностика Webhook
-
-Если группы не появляются:
-
-```text
-1. Проверьте PUBLIC_BASE_URL в Vercel
-2. Проверьте MAX_WEBHOOK_SECRET
-3. Нажмите “Проверить подписки”
-4. Откройте Supabase → Table Editor → max_webhook_events
-5. Посмотрите последние события и поле error
-```
-
-Webhook должен быть доступен по HTTPS. Vercel подходит.
-
-## 8. Безопасность
-
-Не публикуйте в GitHub:
-
-```text
-MAX_BOT_TOKEN
-SUPABASE_SERVICE_ROLE_KEY
-ADMIN_PASSWORD
-MAX_WEBHOOK_SECRET
-```
-
-Все эти значения должны быть только в Vercel Environment Variables.
-
-## 9. Что добавить следующим шагом
-
-```text
-- планировщик публикаций
-- роли пользователей
-- отдельные проекты: мягкие окна / EVA / 3D товары
-- библиотека фото
-- отчёт по успешным/ошибочным отправкам
-- удаление/редактирование групп из интерфейса
-```
-
-
-## v5: диагностика ошибки `fetch failed`
-
-Если при подключении Webhook видите:
+Там стоит проверка очереди раз в 15 минут:
 
 ```json
-{ "ok": false, "error": "fetch failed" }
+{
+  "path": "/api/cron-send-scheduled",
+  "schedule": "*/15 * * * *"
+}
 ```
 
-откройте админку, введите пароль и нажмите **«Диагностика MAX API»**. Она проверит:
+После изменения сделайте `Redeploy`.
 
-- видит ли Vercel переменные окружения;
-- какой `MAX_API_BASE_URL` используется;
-- работает ли запрос `GET /me` к MAX API;
-- работает ли `GET /subscriptions`;
-- доступен ли Supabase;
-- корректен ли `MAX_WEBHOOK_SECRET`.
+## 5. Вариант B — Vercel Hobby / бесплатный тариф
 
-По документации MAX до 19 июля 2026 в примерах используется `https://platform-api2.max.ru`, но если Vercel не может установить TLS-соединение, временно попробуйте в переменной Vercel:
+На бесплатном тарифе Vercel встроенный Cron обычно не подходит для частой проверки очереди. Используйте внешний cron-сервис.
+
+Настройки внешнего cron:
 
 ```text
-MAX_API_BASE_URL=https://platform-api.max.ru
+URL: https://adminka-max.vercel.app/api/cron-send-scheduled
+Method: GET или POST
+Interval: every 15 minutes
+Header: Authorization: Bearer <CRON_SECRET>
 ```
 
-После изменения переменной обязательно сделайте **Redeploy** проекта в Vercel.
+Пример заголовка:
 
-
-## v10: исправление chat_id = 0
-
-Если при отправке появляется ошибка `Invalid chatId: 0`, значит в таблице `max_groups` есть ошибочная строка с `chat_id = 0`. В v10 добавлена защита: такие группы не отправляются, ручное добавление `0` запрещено, а `supabase/schema.sql` удаляет такие строки и добавляет constraint.
-
-Быстрое ручное исправление в Supabase SQL Editor:
-
-```sql
-delete from public.max_groups where chat_id = 0;
+```text
+Authorization: Bearer max-cron-8fb7a236c98d42d1
 ```
 
-После этого добавьте бота в тестовую группу MAX, напишите в группе любое сообщение и нажмите в админке “Войти / загрузить группы”.
+## 6. Как запланировать пост
 
+1. Откройте админку.
+2. Введите пароль.
+3. Нажмите “Войти / загрузить группы”.
+4. Выберите группы.
+5. Напишите текст поста.
+6. При необходимости добавьте фото и кнопки.
+7. В блоке “Расписание отправки” выберите дату и время.
+8. Нажмите “Запланировать пост”.
+9. Нажмите “Обновить расписание” и проверьте, что пост появился в списке.
 
-## v10 Button URL Fix
+## 7. Проверка без ожидания Cron
 
-- Кнопки MAX теперь отправляются только если ссылка начинается с `http://` или `https://`.
-- `tel:` больше не отправляется как кнопка, потому что MAX API возвращает `Must have only http/https links format in buttons`.
-- Телефон добавлен в текст шаблонов: `48-98-78`.
-- Если пользователь введёт невалидную ссылку в кнопку, админка покажет ошибку до отправки в MAX.
+В админке есть кнопка:
+
+```text
+Запустить проверку сейчас
+```
+
+Она вручную вызывает:
+
+```text
+/api/cron-send-scheduled?limit=5
+```
+
+Если есть просроченные посты, они будут отправлены сразу.
+
+## 8. Важно про фото
+
+В v11 фото для запланированного поста хранится в Supabase как base64 `image_data_url`. Это удобно для MVP, но не идеально для больших объёмов.
+
+Для постоянной работы лучше позже перенести фото в Supabase Storage и хранить в таблице только ссылку на файл.
