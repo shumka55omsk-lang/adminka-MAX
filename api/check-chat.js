@@ -1,28 +1,32 @@
-import { authHeaders, getMaxApiBaseUrl, requireAdmin, requireToken } from './_max.js';
+import { maxFetch, requireAdmin, requireToken, serializeFetchError } from './_max.js';
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ ok: false, error: 'Method not allowed' });
+  try {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ ok: false, error: 'Method not allowed' });
+    }
+    if (!requireAdmin(req, res)) return;
+    if (!requireToken(res)) return;
+
+    const { chat_id } = req.body || {};
+    const chatId = Number(chat_id);
+    if (!Number.isFinite(chatId)) {
+      return res.status(400).json({ ok: false, error: 'Некорректный chat_id' });
+    }
+
+    const result = await maxFetch(`/chats/${encodeURIComponent(chatId)}/members/me`, { method: 'GET' });
+    return res.status(200).json({
+      ok: result.ok,
+      status: result.status,
+      data: result.data,
+      baseUrl: result.baseUrl
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      error: error.message,
+      baseUrl: error.baseUrl || null,
+      details: error.details || serializeFetchError(error)
+    });
   }
-
-  if (!requireAdmin(req, res)) return;
-  if (!requireToken(res)) return;
-
-  const { chatId } = req.body || {};
-  const numericChatId = Number(chatId);
-  if (!Number.isFinite(numericChatId)) {
-    return res.status(400).json({ ok: false, error: 'Некорректный chat_id' });
-  }
-
-  const response = await fetch(`${getMaxApiBaseUrl()}/chats/${numericChatId}/members/me`, {
-    method: 'GET',
-    headers: authHeaders()
-  });
-
-  const data = await response.json().catch(() => null);
-  return res.status(response.ok ? 200 : response.status).json({
-    ok: response.ok,
-    status: response.status,
-    data
-  });
 }

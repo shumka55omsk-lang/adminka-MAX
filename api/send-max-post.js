@@ -1,4 +1,4 @@
-import { authHeaders, getMaxApiBaseUrl, requireAdmin, requireToken } from './_max.js';
+import { authHeaders, getMaxApiBaseUrl, maxFetch, requireAdmin, requireToken, serializeFetchError } from './_max.js';
 import { saveSendLogs } from './_logs.js';
 
 export const config = {
@@ -76,15 +76,10 @@ async function uploadImage(imageDataUrl) {
   const image = parseImageDataUrl(imageDataUrl);
   if (!image) return null;
 
-  const baseUrl = getMaxApiBaseUrl();
-  const initResponse = await fetch(`${baseUrl}/uploads?type=image`, {
-    method: 'POST',
-    headers: authHeaders()
-  });
-
-  const initData = await initResponse.json().catch(() => null);
-  if (!initResponse.ok || !initData?.url) {
-    throw new Error('MAX не выдал URL для загрузки изображения: ' + JSON.stringify(initData));
+  const initResult = await maxFetch('/uploads?type=image', { method: 'POST' });
+  const initData = initResult.data;
+  if (!initResult.ok || !initData?.url) {
+    throw new Error(`MAX не выдал URL для загрузки изображения. HTTP ${initResult.status}: ${JSON.stringify(initData)}`);
   }
 
   const form = new FormData();
@@ -111,24 +106,24 @@ async function sendMessage(chatId, text, buttons, imagePayload, attempt = 1) {
     attachments: buildAttachments(buttons, imagePayload)
   };
 
-  const response = await fetch(`${getMaxApiBaseUrl()}/messages?chat_id=${encodeURIComponent(chatId)}`, {
+  const result = await maxFetch(`/messages?chat_id=${encodeURIComponent(chatId)}`, {
     method: 'POST',
-    headers: authHeaders({ 'Content-Type': 'application/json' }),
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
 
-  const data = await response.json().catch(() => null);
+  const data = result.data;
 
   const isAttachmentNotReady = data?.code === 'attachment.not.ready' || String(data?.message || '').includes('not.processed');
-  if (!response.ok && isAttachmentNotReady && attempt < 4) {
+  if (!result.ok && isAttachmentNotReady && attempt < 4) {
     await sleep(1000 * attempt);
     return sendMessage(chatId, text, buttons, imagePayload, attempt + 1);
   }
 
   return {
     chatId,
-    ok: response.ok,
-    status: response.status,
+    ok: result.ok,
+    status: result.status,
     data
   };
 }
@@ -198,6 +193,6 @@ export default async function handler(req, res) {
       results
     });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message });
+    return res.status(500).json({ ok: false, error: error.message, baseUrl: error.baseUrl || null, details: error.details || serializeFetchError(error) });
   }
 }

@@ -1,4 +1,4 @@
-import { getMaxApiBaseUrl, authHeaders, requireAdmin, requireToken } from './_max.js';
+import { maxFetch, requireAdmin, requireToken, serializeFetchError } from './_max.js';
 
 const DEFAULT_UPDATE_TYPES = [
   'bot_added',
@@ -18,17 +18,12 @@ function getBaseUrl(req) {
 }
 
 async function maxRequest(path, options = {}) {
-  const response = await fetch(`${getMaxApiBaseUrl()}${path}`, {
-    ...options,
-    headers: authHeaders(options.headers || {})
-  });
-  const data = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new Error(`MAX API ${response.status}: ${JSON.stringify(data)}`);
+  const result = await maxFetch(path, options);
+  if (!result.ok) {
+    throw new Error(`MAX API ${result.status}: ${JSON.stringify(result.data)}`);
   }
-  return data;
+  return result.data;
 }
-
 export default async function handler(req, res) {
   try {
     if (!['GET', 'POST'].includes(req.method)) {
@@ -61,6 +56,6 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ ok: true, payload, data });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message });
+    return res.status(500).json({ ok: false, error: error.message, baseUrl: error.baseUrl || null, details: error.details || serializeFetchError(error) });
   }
 }

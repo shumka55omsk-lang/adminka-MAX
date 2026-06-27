@@ -254,7 +254,7 @@
     <div class="top">
       <div>
         <h1>Рассылка MAX</h1>
-        <p class="sub">MVP-админка: текст, фото, кнопки, группы, история и Webhook MAX через Supabase.</p>
+        <p class="sub">MVP-админка: текст, фото, кнопки, группы, история, Webhook MAX и диагностика API через Supabase.</p>
       </div>
     </div>
 
@@ -281,6 +281,7 @@
       <div class="row">
         <button class="secondary" id="setupWebhookBtn" type="button">Подключить Webhook</button>
         <button class="secondary" id="listWebhookBtn" type="button">Проверить подписки</button>
+        <button class="secondary" id="diagBtn" type="button">Диагностика MAX API</button>
       </div>
       <p class="sub" style="margin-top:10px">В Vercel укажи PUBLIC_BASE_URL=https://твой-домен.vercel.app и MAX_WEBHOOK_SECRET. Endpoint: /api/max-webhook.</p>
     </section>
@@ -466,6 +467,20 @@
         setStatus('Подписки MAX:\n' + JSON.stringify(data.data, null, 2), 'ok');
       } catch (error) {
         setStatus('Ошибка проверки подписок:\n' + error.message, 'err');
+      }
+    }
+
+
+    async function runDiagnostics() {
+      try {
+        if (!getPassword()) return setStatus('Введите пароль админки.', 'err');
+        setStatus('Проверяю MAX API, Webhook URL и Supabase...');
+        const data = await apiFetch('/api/diagnostics');
+        setStatus('Диагностика:
+' + JSON.stringify(data, null, 2), data.ok ? 'ok' : 'err');
+      } catch (error) {
+        setStatus('Ошибка диагностики:
+' + error.message, 'err');
       }
     }
 
@@ -726,6 +741,7 @@
     el('loadBtn').addEventListener('click', async () => { await loadGroups(); await renderHistory(); await loadTemplates(); });
     el('setupWebhookBtn').addEventListener('click', setupWebhook);
     el('listWebhookBtn').addEventListener('click', listWebhooks);
+    el('diagBtn').addEventListener('click', runDiagnostics);
     el('checkBtn').addEventListener('click', checkAccess);
     el('addGroupBtn').addEventListener('click', addGroup);
     el('sendBtn').addEventListener('click', sendPost);

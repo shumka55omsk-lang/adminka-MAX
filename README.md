@@ -1,4 +1,4 @@
-# MAX Admin MVP v4 + Supabase + Webhook
+# MAX Admin MVP v5 + Supabase + Webhook
 
 Админка для рассылки постов в группы MAX через официального бота.
 
@@ -189,3 +189,29 @@ MAX_WEBHOOK_SECRET
 - отчёт по успешным/ошибочным отправкам
 - удаление/редактирование групп из интерфейса
 ```
+
+
+## v5: диагностика ошибки `fetch failed`
+
+Если при подключении Webhook видите:
+
+```json
+{ "ok": false, "error": "fetch failed" }
+```
+
+откройте админку, введите пароль и нажмите **«Диагностика MAX API»**. Она проверит:
+
+- видит ли Vercel переменные окружения;
+- какой `MAX_API_BASE_URL` используется;
+- работает ли запрос `GET /me` к MAX API;
+- работает ли `GET /subscriptions`;
+- доступен ли Supabase;
+- корректен ли `MAX_WEBHOOK_SECRET`.
+
+По документации MAX до 19 июля 2026 в примерах используется `https://platform-api2.max.ru`, но если Vercel не может установить TLS-соединение, временно попробуйте в переменной Vercel:
+
+```text
+MAX_API_BASE_URL=https://platform-api.max.ru
+```
+
+После изменения переменной обязательно сделайте **Redeploy** проекта в Vercel.
