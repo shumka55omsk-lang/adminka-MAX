@@ -166,3 +166,57 @@ drop trigger if exists max_scheduled_posts_set_updated_at on public.max_schedule
 create trigger max_scheduled_posts_set_updated_at
 before update on public.max_scheduled_posts
 for each row execute function public.set_updated_at();
+
+-- v14 mini app: заявки из мини-приложения MAX.
+create table if not exists public.max_miniapp_leads (
+  id uuid primary key default gen_random_uuid(),
+  name text,
+  phone text,
+  address text,
+  object_type text,
+  comment text,
+  windows jsonb not null default '[]'::jsonb,
+  area_m2 numeric,
+  estimated_total integer,
+  price_per_m2 integer,
+  max_user_id bigint,
+  max_username text,
+  max_chat_id bigint,
+  init_data_valid boolean not null default false,
+  validation_reason text,
+  status text not null default 'new',
+  raw_payload jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint max_miniapp_leads_status_check check (status in ('new', 'contacted', 'measured', 'ordered', 'cancelled'))
+);
+
+alter table public.max_miniapp_leads add column if not exists name text;
+alter table public.max_miniapp_leads add column if not exists phone text;
+alter table public.max_miniapp_leads add column if not exists address text;
+alter table public.max_miniapp_leads add column if not exists object_type text;
+alter table public.max_miniapp_leads add column if not exists comment text;
+alter table public.max_miniapp_leads add column if not exists windows jsonb not null default '[]'::jsonb;
+alter table public.max_miniapp_leads add column if not exists area_m2 numeric;
+alter table public.max_miniapp_leads add column if not exists estimated_total integer;
+alter table public.max_miniapp_leads add column if not exists price_per_m2 integer;
+alter table public.max_miniapp_leads add column if not exists max_user_id bigint;
+alter table public.max_miniapp_leads add column if not exists max_username text;
+alter table public.max_miniapp_leads add column if not exists max_chat_id bigint;
+alter table public.max_miniapp_leads add column if not exists init_data_valid boolean not null default false;
+alter table public.max_miniapp_leads add column if not exists validation_reason text;
+alter table public.max_miniapp_leads add column if not exists status text not null default 'new';
+alter table public.max_miniapp_leads add column if not exists raw_payload jsonb not null default '{}'::jsonb;
+alter table public.max_miniapp_leads add column if not exists updated_at timestamptz not null default now();
+
+alter table public.max_miniapp_leads enable row level security;
+
+create index if not exists max_miniapp_leads_created_at_idx on public.max_miniapp_leads(created_at desc);
+create index if not exists max_miniapp_leads_status_idx on public.max_miniapp_leads(status);
+create index if not exists max_miniapp_leads_phone_idx on public.max_miniapp_leads(phone);
+create index if not exists max_miniapp_leads_max_user_id_idx on public.max_miniapp_leads(max_user_id);
+
+drop trigger if exists max_miniapp_leads_set_updated_at on public.max_miniapp_leads;
+create trigger max_miniapp_leads_set_updated_at
+before update on public.max_miniapp_leads
+for each row execute function public.set_updated_at();

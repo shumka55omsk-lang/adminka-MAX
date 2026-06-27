@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Мягкие окна — заявка</title>
+  <script src="https://st.max.ru/js/max-web-app.js"></script>
+  <style>
+    :root {
+      --bg: #f4f5f7;
+      --card: #ffffff;
+      --text: #151923;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --accent: #111827;
+      --good: #0f766e;
+      --bad: #b91c1c;
+      --soft: #eef2ff;
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #eef2ff 0%, var(--bg) 210px);
+      padding: 14px 14px calc(24px + env(safe-area-inset-bottom));
+    }
+
+    .app {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      padding: 18px 4px 14px;
+    }
+
+    .badge {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      padding: 7px 10px;
+      border: 1px solid rgba(17, 24, 39, .08);
+      border-radius: 999px;
+      background: rgba(255,255,255,.75);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    h1 {
+      margin: 14px 0 8px;
+      font-size: 28px;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(17, 24, 39, .06);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, .06);
+      margin: 12px 0;
+    }
+
+    .section-title {
+      margin: 0 0 12px;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    label {
+      display: block;
+      font-weight: 650;
+      font-size: 13px;
+      margin: 12px 0 6px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 13px 12px;
+      font: inherit;
+      font-size: 16px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: #9ca3af;
+      box-shadow: 0 0 0 3px rgba(156,163,175,.18);
+    }
+
+    textarea { min-height: 96px; resize: vertical; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .window-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr .72fr 38px;
+      gap: 8px;
+      align-items: end;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: #fafafa;
+      margin-bottom: 8px;
+    }
+
+    .window-row label { margin-top: 0; }
+
+    .remove {
+      width: 38px;
+      height: 47px;
+      border: 0;
+      border-radius: 12px;
+      color: #991b1b;
+      background: #fee2e2;
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .metric {
+      border-radius: 16px;
+      background: var(--soft);
+      padding: 14px;
+    }
+
+    .metric .label { color: var(--muted); font-size: 12px; margin-bottom: 5px; }
+    .metric .value { font-size: 22px; font-weight: 800; letter-spacing: -0.03em; }
+
+    .actions {
+      position: sticky;
+      bottom: 0;
+      padding: 12px 0 calc(8px + env(safe-area-inset-bottom));
+      background: linear-gradient(180deg, rgba(244,245,247,0), var(--bg) 28%);
+    }
+
+    button.primary, button.secondary {
+      width: 100%;
+      border: 0;
+      border-radius: 16px;
+      padding: 15px 16px;
+      font: inherit;
+      font-weight: 800;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button.primary { background: var(--accent); color: #fff; }
+    button.secondary { background: #fff; color: var(--accent); border: 1px solid var(--border); margin-top: 8px; }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+
+    .status {
+      margin-top: 10px;
+      border-radius: 14px;
+      padding: 12px;
+      font-size: 14px;
+      line-height: 1.35;
+      display: none;
+    }
+    .status.show { display: block; }
+    .status.good { background: #ecfdf5; color: var(--good); border: 1px solid #a7f3d0; }
+    .status.bad { background: #fef2f2; color: var(--bad); border: 1px solid #fecaca; }
+    .status.info { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+
+    .mini-note {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+      margin-top: 8px;
+    }
+
+    .link-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .link-btn {
+      display: block;
+      text-align: center;
+      text-decoration: none;
+      color: var(--accent);
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 10px;
+      font-weight: 750;
+    }
+
+    @media (max-width: 480px) {
+      h1 { font-size: 25px; }
+      .window-row { grid-template-columns: 1fr 1fr; }
+      .remove { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="hero">
+      <div class="badge">MAX mini app · Мягкие окна Омск</div>
+      <h1>Рассчитать мягкие окна</h1>
+      <p class="subtitle">Заполните размеры проёмов — мы получим заявку, проверим крепёж и дадим точную стоимость.</p>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title">Контакты</h2>
+      <div class="grid-2">
+        <div>
+          <label for="name">Имя</label>
+          <input id="name" autocomplete="name" placeholder="Как к вам обращаться" />
+        </div>
+        <div>
+          <label for="phone">Телефон</label>
+          <input id="phone" autocomplete="tel" inputmode="tel" placeholder="+7 ..." />
+        </div>
+      </div>
+      <button class="secondary" id="requestContactBtn" type="button">Подставить номер из MAX</button>
+      <label for="address">Адрес / район</label>
+      <input id="address" placeholder="Например: Омск, СНТ..., беседка" />
+      <label for="objectType">Что нужно закрыть</label>
+      <select id="objectType">
+        <option>Беседка</option>
+        <option>Веранда</option>
+        <option>Терраса</option>
+        <option>Кафе / летник</option>
+        <option>Другое</option>
+      </select>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title">Размеры проёмов</h2>
+      <div id="windows"></div>
+      <button class="secondary" id="addWindowBtn" type="button">+ Добавить окно</button>
+      <div class="summary">
+        <div class="metric">
+          <div class="label">Площадь</div>
+          <div class="value"><span id="area">0.00</span> м²</div>
+        </div>
+        <div class="metric">
+          <div class="label">Предварительно</div>
+          <div class="value"><span id="total">0</span> ₽</div>
+        </div>
+      </div>
+      <div class="mini-note">Расчёт предварительный. Точная цена зависит от окантовки, молний, крепежа, сложности монтажа и замера.</div>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title">Комментарий</h2>
+      <textarea id="comment" placeholder="Например: нужны молнии, поворотные скобы, есть уклон крыши, фото пришлю позже"></textarea>
+      <div class="link-row">
+        <a class="link-btn" href="https://wa.me/79039812452" id="waLink">WhatsApp</a>
+        <a class="link-btn" href="https://t.me/Anvar_company" id="tgLink">Telegram</a>
+      </div>
+    </section>
+
+    <section class="actions">
+      <button class="primary" id="submitBtn" type="button">Отправить заявку</button>
+      <div id="status" class="status"></div>
+    </section>
+  </main>
+
+  <script>
+    const PRICE_PER_M2 = 1500;
+    const state = {
+      contact: null,
+      webApp: window.WebApp || null
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function status(text, type = 'info') {
+      const el = $('status');
+      el.className = `status show ${type}`;
+      el.textContent = text;
+    }
+
+    function safeOpenLink(url) {
+      if (state.webApp && typeof state.webApp.openLink === 'function') {
+        state.webApp.openLink(url);
+        return;
+      }
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+
+    function getInitDataUnsafe() {
+      return state.webApp?.initDataUnsafe || {};
+    }
+
+    function initMax() {
+      try {
+        const user = getInitDataUnsafe()?.user;
+        if (user?.first_name && !$('name').value) $('name').value = user.first_name;
+        if (state.webApp?.enableClosingConfirmation) state.webApp.enableClosingConfirmation();
+      } catch (e) {
+        console.warn('MAX Bridge init warning', e);
+      }
+    }
+
+    function createWindowRow(data = {}) {
+      const row = document.createElement('div');
+      row.className = 'window-row';
+      row.innerHTML = `
+        <div>
+          <label>Ширина, см</label>
+          <input class="width" inputmode="decimal" type="number" min="1" value="${data.widthCm || ''}" placeholder="250" />
+        </div>
+        <div>
+          <label>Высота, см</label>
+          <input class="height" inputmode="decimal" type="number" min="1" value="${data.heightCm || ''}" placeholder="180" />
+        </div>
+        <div>
+          <label>Кол-во</label>
+          <input class="count" inputmode="numeric" type="number" min="1" value="${data.count || 1}" />
+        </div>
+        <button class="remove" type="button" aria-label="Удалить">×</button>
+      `;
+      row.querySelectorAll('input').forEach((input) => input.addEventListener('input', calculate));
+      row.querySelector('.remove').addEventListener('click', () => {
+        if (document.querySelectorAll('.window-row').length > 1) row.remove();
+        calculate();
+      });
+      return row;
+    }
+
+    function addWindow(data) {
+      $('windows').appendChild(createWindowRow(data));
+      calculate();
+    }
+
+    function getWindows() {
+      return Array.from(document.querySelectorAll('.window-row')).map((row) => ({
+        widthCm: Number(row.querySelector('.width').value || 0),
+        heightCm: Number(row.querySelector('.height').value || 0),
+        count: Number(row.querySelector('.count').value || 1)
+      })).filter((w) => w.widthCm > 0 && w.heightCm > 0 && w.count > 0);
+    }
+
+    function calculate() {
+      const windows = getWindows();
+      const area = windows.reduce((sum, w) => sum + (w.widthCm / 100) * (w.heightCm / 100) * w.count, 0);
+      const total = Math.round(area * PRICE_PER_M2);
+      $('area').textContent = area.toFixed(2);
+      $('total').textContent = total.toLocaleString('ru-RU');
+      return { windows, areaM2: Number(area.toFixed(2)), total, pricePerM2: PRICE_PER_M2 };
+    }
+
+    async function requestContact() {
+      if (!state.webApp || typeof state.webApp.requestContact !== 'function') {
+        status('Запрос номера доступен только внутри MAX. Введите телефон вручную.', 'info');
+        return;
+      }
+      try {
+        const contact = await state.webApp.requestContact();
+        state.contact = contact;
+        if (contact?.phone) $('phone').value = contact.phone.startsWith('+') ? contact.phone : `+${contact.phone}`;
+        status('Номер подставлен из MAX.', 'good');
+      } catch (error) {
+        status('Не удалось получить номер из MAX. Введите телефон вручную.', 'bad');
+      }
+    }
+
+    async function submitLead() {
+      const estimate = calculate();
+      const form = {
+        name: $('name').value.trim(),
+        phone: $('phone').value.trim(),
+        address: $('address').value.trim(),
+        objectType: $('objectType').value,
+        comment: $('comment').value.trim(),
+        windows: estimate.windows
+      };
+
+      if (!form.name && !form.phone) {
+        status('Укажите имя или телефон.', 'bad');
+        return;
+      }
+      if (!estimate.windows.length) {
+        status('Добавьте хотя бы один размер проёма.', 'bad');
+        return;
+      }
+
+      $('submitBtn').disabled = true;
+      status('Отправляем заявку...', 'info');
+
+      try {
+        const response = await fetch('/api/miniapp-submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            source: 'max-miniapp-soft-windows',
+            initData: state.webApp?.initData || '',
+            initDataUnsafe: getInitDataUnsafe(),
+            contact: state.contact,
+            form,
+            estimate
+          })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || `Ошибка ${response.status}`);
+        }
+        status('Заявка отправлена. Мы свяжемся с вами для точного расчёта.', 'good');
+        if (state.webApp?.disableClosingConfirmation) state.webApp.disableClosingConfirmation();
+      } catch (error) {
+        status(`Ошибка отправки: ${error.message}`, 'bad');
+      } finally {
+        $('submitBtn').disabled = false;
+      }
+    }
+
+    $('addWindowBtn').addEventListener('click', () => addWindow());
+    $('requestContactBtn').addEventListener('click', requestContact);
+    $('submitBtn').addEventListener('click', submitLead);
+    $('waLink').addEventListener('click', (e) => { e.preventDefault(); safeOpenLink(e.currentTarget.href); });
+    $('tgLink').addEventListener('click', (e) => { e.preventDefault(); safeOpenLink(e.currentTarget.href); });
+
+    addWindow({ widthCm: 250, heightCm: 180, count: 1 });
+    initMax();
+  </script>
+</body>
+</html>

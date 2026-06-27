@@ -1,6 +1,6 @@
 {
-  "name": "max-admin-mvp-v8-diagnostics-fix",
-  "version": "8.0.0",
+  "name": "max-admin-mvp-v14-miniapp",
+  "version": "14.0.0",
   "private": true,
   "type": "module",
   "scripts": {

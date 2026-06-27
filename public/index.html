@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Рассылка MAX v13</title>
+  <title>Рассылка MAX v14</title>
   <style>
     :root {
       --bg: #f3f5f7;
@@ -383,8 +383,8 @@
   <main class="wrap">
     <div class="top">
       <div>
-        <h1>Рассылка MAX <span style="font-size:14px;color:#667085">v13</span></h1>
-        <p class="sub">MVP-админка: текст, фото, кнопки, группы, история, Webhook MAX, диагностика API и расписание через Supabase.</p>
+        <h1>Рассылка MAX <span style="font-size:14px;color:#667085">v14</span></h1>
+        <p class="sub">MVP-админка: рассылка, Webhook, расписание и мини-приложение MAX для заявок.</p>
       </div>
     </div>
 
@@ -392,9 +392,9 @@
       <div id="topStatusDot" class="top-status-dot"></div>
       <div>
         <div id="topStatusTitle" class="top-status-title">Статус: готово</div>
-        <div id="topStatusMessage" class="top-status-message">Готово к работе. Если видите эту панель сверху — обновление v13 применилось.</div>
+        <div id="topStatusMessage" class="top-status-message">Готово к работе. v14: добавлено мини-приложение для заявок клиентов.</div>
       </div>
-      <div class="version-badge">v13</div>
+      <div class="version-badge">v14</div>
       <div id="topStatusTime" class="top-status-time">—</div>
     </div>
 
@@ -412,6 +412,15 @@
             <button class="secondary" id="checkBtn" type="button">Проверить доступ</button>
           </div>
         </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <label class="title">Мини-приложение MAX</label>
+      <p class="sub">Ссылка для настройки в MAX: <b id="miniappUrlText">/miniapp</b></p>
+      <div class="row">
+        <button class="secondary" id="openMiniappBtn" type="button">Открыть мини-приложение</button>
+        <button class="secondary" id="copyMiniappBtn" type="button">Скопировать ссылку</button>
       </div>
     </section>
 
@@ -1133,6 +1142,31 @@
     el('refreshHistoryBtn').addEventListener('click', renderHistory);
     el('clearHistoryBtn').addEventListener('click', clearHistory);
 
+    function getMiniappUrl() {
+      return `${window.location.origin}/miniapp`;
+    }
+
+    function updateMiniappUrl() {
+      const text = el('miniappUrlText');
+      if (text) text.textContent = getMiniappUrl();
+    }
+
+    el('openMiniappBtn')?.addEventListener('click', () => {
+      window.open(getMiniappUrl(), '_blank', 'noopener,noreferrer');
+      setStatus('Мини-приложение открыто в новой вкладке.', 'ok');
+    });
+
+    el('copyMiniappBtn')?.addEventListener('click', async () => {
+      const url = getMiniappUrl();
+      try {
+        await navigator.clipboard.writeText(url);
+        setStatus(`Ссылка мини-приложения скопирована: ${url}`, 'ok');
+      } catch {
+        setStatus(`Ссылка мини-приложения: ${url}`, 'ok');
+      }
+    });
+
+    updateMiniappUrl();
     updateWebhookUrl();
     setDefaultScheduledAt();
     renderTemplateButtons();
