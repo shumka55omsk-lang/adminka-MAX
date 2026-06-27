@@ -1,90 +1,77 @@
-import { getMaxApiBaseUrl, getTlsInfo, maskToken, maxFetch, requireAdmin, serializeFetchError } from './_max.js';
-import { hasSupabase, supabaseFetch } from './_supabase.js';
+import checkChat from '../lib/api/check-chat.js';
+import cronSendScheduled from '../lib/api/cron-send-scheduled.js';
+import diagnostics from '../lib/api/diagnostics.js';
+import groups from '../lib/api/groups.js';
+import history from '../lib/api/history.js';
+import maxWebhook from '../lib/api/max-webhook.js';
+import miniappLeads from '../lib/api/miniapp-leads.js';
+import miniappSubmit from '../lib/api/miniapp-submit.js';
+import schedulePost from '../lib/api/schedule-post.js';
+import scheduledPosts from '../lib/api/scheduled-posts.js';
+import sendMaxPost from '../lib/api/send-max-post.js';
+import templates from '../lib/api/templates.js';
+import webhookSubscription from '../lib/api/webhook-subscription.js';
 
-function envInfo(req) {
-  const token = String(process.env.MAX_BOT_TOKEN || '').trim();
-  const publicBaseUrl = String(process.env.PUBLIC_BASE_URL || '').trim();
-  const webhookSecret = String(process.env.MAX_WEBHOOK_SECRET || '').trim();
-  const host = req.headers['x-forwarded-host'] || req.headers.host || '';
-  const proto = req.headers['x-forwarded-proto'] || 'https';
-  const detectedBaseUrl = `${proto}://${host}`.replace(/\/+$/, '');
+const VERSION = {
+  ok: true,
+  version: 'v16-miniapp-pro',
+  builtAt: '2026-06-28T01:10:00Z',
+  miniappUrl: '/miniapp',
+  apiMode: 'single-catch-all-function',
+  reason: 'Vercel Hobby compatible router + upgraded MAX mini app'
+};
 
-  return {
-    maxApiBaseUrl: getMaxApiBaseUrl(),
-    tls: getTlsInfo(),
-    hasMaxToken: Boolean(token),
-    maxTokenMasked: maskToken(token),
-    maxTokenLength: token.length || 0,
-    publicBaseUrl: publicBaseUrl || null,
-    detectedBaseUrl,
-    webhookUrl: `${(publicBaseUrl || detectedBaseUrl).replace(/\/+$/, '')}/api/max-webhook`,
-    hasWebhookSecret: Boolean(webhookSecret),
-    webhookSecretLength: webhookSecret.length || 0,
-    webhookSecretValid: !webhookSecret || /^[a-zA-Z0-9_-]{5,256}$/.test(webhookSecret),
-    hasSupabaseUrl: Boolean(String(process.env.SUPABASE_URL || '').trim()),
-    hasSupabaseServiceRoleKey: Boolean(String(process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim())
-  };
-}
+const routes = new Map([
+  ['check-chat', checkChat],
+  ['cron-send-scheduled', cronSendScheduled],
+  ['diagnostics', diagnostics],
+  ['groups', groups],
+  ['history', history],
+  ['max-webhook', maxWebhook],
+  ['miniapp-leads', miniappLeads],
+  ['miniapp-submit', miniappSubmit],
+  ['schedule-post', schedulePost],
+  ['scheduled-posts', scheduledPosts],
+  ['send-max-post', sendMaxPost],
+  ['templates', templates],
+  ['webhook-subscription', webhookSubscription]
+]);
 
-async function runMaxTest(path, method = 'GET') {
-  try {
-    const result = await maxFetch(path, { method, timeoutMs: 15000 });
-    return {
-      ok: result.ok,
-      status: result.status,
-      baseUrl: result.baseUrl,
-      data: result.data
-    };
-  } catch (error) {
-    return {
-      ok: false,
-      baseUrl: error.baseUrl || getMaxApiBaseUrl(),
-      error: error.message,
-      details: error.details || serializeFetchError(error)
-    };
-  }
-}
+function getRouteName(req) {
+  const fromQuery = req.query?.route;
+  if (Array.isArray(fromQuery)) return fromQuery.join('/').replace(/^\/+|\/+$/g, '');
+  if (typeof fromQuery === 'string') return fromQuery.replace(/^\/+|\/+$/g, '');
 
-async function runSupabaseTest() {
-  try {
-    if (!hasSupabase()) return { ok: false, skipped: true, error: 'Supabase не настроен' };
-    const data = await supabaseFetch('max_groups?select=id&limit=1', { method: 'GET' });
-    return { ok: true, rowsVisible: Array.isArray(data) ? data.length : 0 };
-  } catch (error) {
-    return { ok: false, error: error.message, details: error?.details || null };
-  }
+  const host = req.headers.host || 'localhost';
+  const url = new URL(req.url || '/', `https://${host}`);
+  return url.pathname.replace(/^\/api\/?/, '').replace(/^\/+|\/+$/g, '');
 }
 
 export default async function handler(req, res) {
-  try {
-    if (req.method !== 'GET') {
-      return res.status(405).json({ ok: false, error: 'Method not allowed' });
-    }
-    if (!requireAdmin(req, res)) return;
+  const routeName = getRouteName(req);
 
-    const env = envInfo(req);
-    const maxMe = await runMaxTest('/me');
-    const maxSubscriptions = await runMaxTest('/subscriptions');
-    const supabase = await runSupabaseTest();
-
+  if (!routeName) {
     return res.status(200).json({
-      ok: maxMe.ok && supabase.ok,
-      checkedAt: new Date().toISOString(),
-      env,
-      tests: {
-        maxMe,
-        maxSubscriptions,
-        supabase
-      },
-      hints: [
-        'Если maxMe показывает fetch failed, проблема в соединении Vercel → MAX API, а не в Supabase.',
-        'Если maxMe показывает UNABLE_TO_GET_ISSUER_CERT_LOCALLY, Node/Vercel не доверяет цепочке сертификатов MAX API.',
-        'Самый быстрый тест: MAX_API_BASE_URL=https://platform-api.max.ru и Redeploy.',
-        'Если нужен platform-api2.max.ru: добавь официальный CA в MAX_CA_CERT_PEM / MAX_CA_CERT_BASE64 или временно поставь MAX_TLS_MODE=insecure только для теста.',
-        'MAX_WEBHOOK_SECRET должен быть 5–256 символов: A-Z, a-z, 0-9, underscore или дефис.'
-      ]
+      ok: true,
+      version: VERSION.version,
+      apiMode: VERSION.apiMode,
+      routes: ['version', ...Array.from(routes.keys()).sort()]
     });
-  } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message, details: serializeFetchError(error) });
   }
+
+  if (routeName === 'version') {
+    return res.status(200).json(VERSION);
+  }
+
+  const routeHandler = routes.get(routeName);
+  if (!routeHandler) {
+    return res.status(404).json({
+      ok: false,
+      error: 'API route not found',
+      route: routeName,
+      availableRoutes: ['version', ...Array.from(routes.keys()).sort()]
+    });
+  }
+
+  return routeHandler(req, res);
 }

@@ -1,95 +1,102 @@
-import { requireAdmin, serializeFetchError } from './_max.js';
-import { hasSupabase, supabaseFetch } from './_supabase.js';
-import { normalizeButtons, normalizeChatIds } from './_sendCore.js';
+import { requireAdmin } from './_max.js';
+import { escapePostgrestValue, hasSupabase, supabaseFetch } from './_supabase.js';
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '8mb'
-    }
+function readEnvGroups() {
+  const raw = process.env.MAX_GROUPS || '[]';
+  try {
+    const groups = JSON.parse(raw);
+    if (!Array.isArray(groups)) return [];
+    return groups
+      .filter((g) => g && g.active !== false && g.name && g.chat_id !== undefined)
+      .map((g) => ({ name: String(g.name), chat_id: Number(g.chat_id), active: true }))
+      .filter((g) => Number.isSafeInteger(g.chat_id) && g.chat_id !== 0);
+  } catch {
+    return [];
   }
-};
+}
 
-function parseScheduledAt(value) {
-  const date = new Date(value);
-  if (!Number.isFinite(date.getTime())) return null;
-  return date;
+async function readDbGroups() {
+  const rows = await supabaseFetch('max_groups?select=id,name,chat_id,active,source,last_update_type,last_event_at,created_at,updated_at&active=eq.true&order=name.asc', {
+    method: 'GET'
+  });
+  return (Array.isArray(rows) ? rows : []).map((g) => ({
+    id: g.id,
+    name: String(g.name),
+    chat_id: Number(g.chat_id),
+    active: g.active !== false,
+    created_at: g.created_at,
+    source: g.source || 'manual',
+    last_update_type: g.last_update_type || null,
+    last_event_at: g.last_event_at || null
+  }));
+}
+
+async function upsertDbGroup(group) {
+  const payload = {
+    name: String(group.name || '').trim(),
+    chat_id: Number(group.chat_id),
+    active: group.active !== false,
+    source: 'manual',
+    last_update_type: 'manual_upsert',
+    last_event_at: new Date().toISOString()
+  };
+
+  if (!payload.name) throw new Error('Введите название группы');
+  if (!Number.isSafeInteger(payload.chat_id) || payload.chat_id === 0) {
+    throw new Error('Некорректный chat_id. Он не может быть пустым или равным 0.');
+  }
+
+  return supabaseFetch('max_groups?on_conflict=chat_id', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Prefer: 'resolution=merge-duplicates,return=representation'
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+async function deactivateDbGroup(chatId) {
+  const numericChatId = Number(chatId);
+  if (!Number.isSafeInteger(numericChatId) || numericChatId === 0) throw new Error('Некорректный chat_id');
+
+  return supabaseFetch(`max_groups?chat_id=eq.${escapePostgrestValue(numericChatId)}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Prefer: 'return=representation'
+    },
+    body: JSON.stringify({ active: false })
+  });
 }
 
 export default async function handler(req, res) {
   try {
-    if (req.method !== 'POST') {
+    if (!['GET', 'POST', 'DELETE'].includes(req.method)) {
       return res.status(405).json({ ok: false, error: 'Method not allowed' });
     }
 
     if (!requireAdmin(req, res)) return;
 
+    if (req.method === 'GET') {
+      const groups = hasSupabase() ? await readDbGroups() : readEnvGroups();
+      return res.status(200).json({ ok: true, storage: hasSupabase() ? 'supabase' : 'env', groups });
+    }
+
     if (!hasSupabase()) {
-      return res.status(400).json({ ok: false, error: 'Для расписания нужен Supabase. Добавьте SUPABASE_URL и SUPABASE_SERVICE_ROLE_KEY.' });
+      return res.status(400).json({ ok: false, error: 'Supabase не настроен. Добавление/удаление групп работает только с Supabase.' });
     }
 
-    const { chatIds, groupNames, text, buttons, imageDataUrl, scheduledAt } = req.body || {};
-    const cleanText = String(text || '').trim();
-    if (!cleanText || cleanText.length < 3) {
-      return res.status(400).json({ ok: false, error: 'Введите текст поста' });
-    }
-    if (cleanText.length > 4000) {
-      return res.status(400).json({ ok: false, error: 'Текст MAX-сообщения должен быть до 4000 символов' });
+    if (req.method === 'POST') {
+      const result = await upsertDbGroup(req.body || {});
+      return res.status(200).json({ ok: true, group: Array.isArray(result) ? result[0] : result });
     }
 
-    const { invalidChatIds, uniqueChatIds } = normalizeChatIds(chatIds);
-    if (invalidChatIds.length) {
-      return res.status(400).json({ ok: false, error: 'Некорректный chat_id в выбранных группах', invalidChatIds });
+    if (req.method === 'DELETE') {
+      const result = await deactivateDbGroup(req.body?.chat_id);
+      return res.status(200).json({ ok: true, result });
     }
-    if (!uniqueChatIds.length) {
-      return res.status(400).json({ ok: false, error: 'Выберите хотя бы одну группу' });
-    }
-    if (uniqueChatIds.length > 30) {
-      return res.status(400).json({ ok: false, error: 'За один запланированный пост можно выбрать максимум 30 групп' });
-    }
-
-    const date = parseScheduledAt(scheduledAt);
-    if (!date) {
-      return res.status(400).json({ ok: false, error: 'Некорректная дата/время отправки' });
-    }
-
-    const now = Date.now();
-    if (date.getTime() < now - 60 * 1000) {
-      return res.status(400).json({ ok: false, error: 'Нельзя запланировать пост в прошлом' });
-    }
-
-    const safeButtons = normalizeButtons(buttons);
-    const imageString = imageDataUrl ? String(imageDataUrl) : null;
-    if (imageString && imageString.length > 8 * 1024 * 1024) {
-      return res.status(400).json({ ok: false, error: 'Фото слишком большое для хранения в расписании. Сожмите изображение до 6 МБ.' });
-    }
-
-    const cleanGroupNames = Array.isArray(groupNames)
-      ? groupNames.map((name) => String(name || '').trim()).filter(Boolean).slice(0, 50)
-      : [];
-
-    const rows = [{
-      post_text: cleanText,
-      chat_ids: uniqueChatIds,
-      group_names: cleanGroupNames,
-      buttons: safeButtons,
-      image_data_url: imageString,
-      has_image: Boolean(imageString),
-      scheduled_at: date.toISOString(),
-      status: 'scheduled'
-    }];
-
-    const data = await supabaseFetch('max_scheduled_posts', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Prefer: 'return=representation'
-      },
-      body: JSON.stringify(rows)
-    });
-
-    return res.status(200).json({ ok: true, scheduled: data?.[0] || null });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message, details: serializeFetchError(error) });
+    return res.status(500).json({ ok: false, error: error.message });
   }
 }

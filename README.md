@@ -1,120 +1,274 @@
-# MAX Admin MVP v15 — Hobby Router Fix + Mini App
+-- MAX Admin MVP v4: Supabase schema with Webhook
+-- Вставьте этот SQL в Supabase → SQL Editor → Run.
 
-Версия v15 исправляет ошибку Vercel Hobby:
+create extension if not exists pgcrypto;
 
-```text
-No more than 12 Serverless Functions can be added to a Deployment on the Hobby plan
-```
+create table if not exists public.max_groups (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  chat_id bigint not null unique,
+  active boolean not null default true,
+  source text not null default 'manual',
+  last_update_type text,
+  last_event_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
 
-## Что изменено
+create table if not exists public.max_templates (
+  id uuid primary key default gen_random_uuid(),
+  key text not null unique,
+  title text not null,
+  text text not null,
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
 
-В v14 каждая папка/файл в `api/*.js` превращалась в отдельную Serverless Function. На бесплатном Hobby-плане Vercel это упёрлось в лимит.
+create table if not exists public.max_send_logs (
+  id uuid primary key default gen_random_uuid(),
+  chat_id bigint not null,
+  post_text text not null,
+  buttons jsonb not null default '[]'::jsonb,
+  has_image boolean not null default false,
+  ok boolean not null default false,
+  status integer,
+  response jsonb,
+  sent_at timestamptz not null default now()
+);
 
-В v15 все API объединены в одну функцию:
 
-```text
-api/[...route].js
-```
+create table if not exists public.max_webhook_events (
+  id uuid primary key default gen_random_uuid(),
+  update_type text not null,
+  chat_ids bigint[] not null default '{}'::bigint[],
+  payload jsonb not null,
+  processed_ok boolean not null default true,
+  error text,
+  saved_groups jsonb not null default '[]'::jsonb,
+  received_at timestamptz not null default now()
+);
 
-Внутренние обработчики перенесены в:
+-- Если таблица max_groups уже была создана в v3, эти команды безопасно добавят новые поля.
+alter table public.max_groups add column if not exists source text not null default 'manual';
+alter table public.max_groups add column if not exists last_update_type text;
+alter table public.max_groups add column if not exists last_event_at timestamptz;
+alter table public.max_groups add column if not exists updated_at timestamptz not null default now();
 
-```text
-lib/api/
-```
+create or replace function public.set_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
 
-Старые адреса остаются теми же:
+drop trigger if exists max_groups_set_updated_at on public.max_groups;
+create trigger max_groups_set_updated_at
+before update on public.max_groups
+for each row execute function public.set_updated_at();
 
-```text
-/api/groups
-/api/send-max-post
-/api/max-webhook
-/api/miniapp-submit
-/api/cron-send-scheduled
-/api/version
-```
+create index if not exists max_groups_active_idx on public.max_groups(active);
+create index if not exists max_send_logs_sent_at_idx on public.max_send_logs(sent_at desc);
+create index if not exists max_send_logs_chat_id_idx on public.max_send_logs(chat_id);
+create index if not exists max_templates_active_idx on public.max_templates(active);
+create index if not exists max_webhook_events_received_at_idx on public.max_webhook_events(received_at desc);
+create index if not exists max_webhook_events_update_type_idx on public.max_webhook_events(update_type);
 
-То есть фронтенд, Webhook MAX, мини-приложение и расписание продолжают работать по прежним URL.
+alter table public.max_groups enable row level security;
+alter table public.max_templates enable row level security;
+alter table public.max_send_logs enable row level security;
+alter table public.max_webhook_events enable row level security;
 
-## Что есть в проекте
+-- Публичных политик нет специально: клиентский браузер не получает ключ Supabase.
+-- Серверные функции Vercel работают через SUPABASE_SERVICE_ROLE_KEY и обходят RLS.
 
-- Админка рассылки MAX.
-- Webhook MAX.
-- Supabase: группы, история, шаблоны, расписание, заявки мини-приложения.
-- Расписание постов.
-- Мини-приложение `/miniapp` для заявки на мягкие окна.
-- Один серверный API-router для Vercel Hobby.
+insert into public.max_templates (key, title, text, active)
+values
+  ('soft', 'Мягкие окна', 'Мягкие окна в Омске
 
-## Как обновить
+Изготовление и установка мягких окон для беседок, веранд и террас.
+ПВХ-плёнка, окантовка, люверсы/скобы, аккуратный монтаж.
 
-1. Залей содержимое архива в корень GitHub-репозитория.
-2. Убедись, что папка `api` содержит только один файл:
+Бесплатный замер. Напишите — рассчитаем стоимость по размерам.', true),
+  ('eva', 'EVA коврики', 'EVA коврики в Омске
 
-```text
-api/[...route].js
-```
+Изготовим коврики под ваш автомобиль.
+Подбор по марке, модели и году. Аккуратная окантовка, разные цвета.
 
-3. Убедись, что папка `lib/api` содержит остальные обработчики.
-4. Сделай Redeploy в Vercel.
-5. Проверь версию:
+Напишите марку авто — рассчитаем стоимость.', true),
+  ('promo', 'Акция', 'Акция на мягкие окна
 
-```text
-https://adminka-max.vercel.app/api/version
-```
+Для беседок, веранд и террас.
+Замер, изготовление и монтаж в Омске и области.
 
-Должно быть:
+Напишите сегодня — рассчитаем стоимость и подскажем оптимальный вариант крепления.', true)
+on conflict (key) do update
+set title = excluded.title,
+    text = excluded.text,
+    active = excluded.active;
 
-```json
-{
-  "ok": true,
-  "version": "v15-hobby-router"
-}
-```
+-- Пример группы. Замените chat_id на реальный или добавьте группу из админки.
+-- insert into public.max_groups (name, chat_id, active)
+-- values ('Тестовая группа MAX', 123456789, true)
+-- on conflict (chat_id) do update set name = excluded.name, active = true;
 
-## Supabase
+-- v9 cleanup: удаляем ошибочно созданные группы с chat_id = 0.
+delete from public.max_groups where chat_id = 0;
 
-Если ты уже запускал SQL из v14, повторно запускать необязательно. Если таблицы мини-приложения ещё нет, выполни:
+-- v9 safety: chat_id не должен быть 0.
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'max_groups_chat_id_not_zero'
+  ) then
+    alter table public.max_groups
+      add constraint max_groups_chat_id_not_zero check (chat_id <> 0);
+  end if;
+end $$;
 
-```text
-supabase/schema.sql
-```
+-- v11 scheduler: запланированные посты.
+create table if not exists public.max_scheduled_posts (
+  id uuid primary key default gen_random_uuid(),
+  post_text text not null,
+  chat_ids bigint[] not null,
+  group_names text[] not null default '{}'::text[],
+  buttons jsonb not null default '[]'::jsonb,
+  image_data_url text,
+  has_image boolean not null default false,
+  scheduled_at timestamptz not null,
+  status text not null default 'scheduled',
+  sent_at timestamptz,
+  last_error text,
+  attempt_count integer not null default 0,
+  result jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint max_scheduled_posts_status_check check (status in ('scheduled', 'processing', 'sent', 'failed', 'cancelled')),
+  constraint max_scheduled_posts_chat_ids_not_empty check (array_length(chat_ids, 1) is not null),
+  constraint max_scheduled_posts_chat_ids_not_zero check (not (0 = any(chat_ids)))
+);
 
-## Важно про GitHub
+alter table public.max_scheduled_posts add column if not exists group_names text[] not null default '{}'::text[];
+alter table public.max_scheduled_posts add column if not exists image_data_url text;
+alter table public.max_scheduled_posts add column if not exists has_image boolean not null default false;
+alter table public.max_scheduled_posts add column if not exists sent_at timestamptz;
+alter table public.max_scheduled_posts add column if not exists last_error text;
+alter table public.max_scheduled_posts add column if not exists attempt_count integer not null default 0;
+alter table public.max_scheduled_posts add column if not exists result jsonb;
+alter table public.max_scheduled_posts add column if not exists updated_at timestamptz not null default now();
 
-Не оставляй старые API-файлы в папке `api`:
+alter table public.max_scheduled_posts enable row level security;
 
-```text
-api/groups.js
-api/send-max-post.js
-api/diagnostics.js
-...
-```
+create index if not exists max_scheduled_posts_due_idx on public.max_scheduled_posts(status, scheduled_at);
+create index if not exists max_scheduled_posts_created_at_idx on public.max_scheduled_posts(created_at desc);
 
-Иначе Vercel снова посчитает их отдельными функциями и деплой упадёт на Hobby-плане.
+drop trigger if exists max_scheduled_posts_set_updated_at on public.max_scheduled_posts;
+create trigger max_scheduled_posts_set_updated_at
+before update on public.max_scheduled_posts
+for each row execute function public.set_updated_at();
 
-В папке `api` должен быть только:
+-- v14 mini app: заявки из мини-приложения MAX.
+create table if not exists public.max_miniapp_leads (
+  id uuid primary key default gen_random_uuid(),
+  name text,
+  phone text,
+  address text,
+  object_type text,
+  comment text,
+  windows jsonb not null default '[]'::jsonb,
+  area_m2 numeric,
+  estimated_total integer,
+  price_per_m2 integer,
+  max_user_id bigint,
+  max_username text,
+  max_chat_id bigint,
+  init_data_valid boolean not null default false,
+  validation_reason text,
+  status text not null default 'new',
+  raw_payload jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint max_miniapp_leads_status_check check (status in ('new', 'contacted', 'measured', 'ordered', 'cancelled'))
+);
 
-```text
-[...route].js
-```
+alter table public.max_miniapp_leads add column if not exists name text;
+alter table public.max_miniapp_leads add column if not exists phone text;
+alter table public.max_miniapp_leads add column if not exists address text;
+alter table public.max_miniapp_leads add column if not exists object_type text;
+alter table public.max_miniapp_leads add column if not exists comment text;
+alter table public.max_miniapp_leads add column if not exists windows jsonb not null default '[]'::jsonb;
+alter table public.max_miniapp_leads add column if not exists area_m2 numeric;
+alter table public.max_miniapp_leads add column if not exists estimated_total integer;
+alter table public.max_miniapp_leads add column if not exists price_per_m2 integer;
+alter table public.max_miniapp_leads add column if not exists max_user_id bigint;
+alter table public.max_miniapp_leads add column if not exists max_username text;
+alter table public.max_miniapp_leads add column if not exists max_chat_id bigint;
+alter table public.max_miniapp_leads add column if not exists init_data_valid boolean not null default false;
+alter table public.max_miniapp_leads add column if not exists validation_reason text;
+alter table public.max_miniapp_leads add column if not exists status text not null default 'new';
+alter table public.max_miniapp_leads add column if not exists raw_payload jsonb not null default '{}'::jsonb;
+alter table public.max_miniapp_leads add column if not exists updated_at timestamptz not null default now();
 
-## Переменные Vercel
+alter table public.max_miniapp_leads enable row level security;
 
-Оставь прежние переменные:
+create index if not exists max_miniapp_leads_created_at_idx on public.max_miniapp_leads(created_at desc);
+create index if not exists max_miniapp_leads_status_idx on public.max_miniapp_leads(status);
+create index if not exists max_miniapp_leads_phone_idx on public.max_miniapp_leads(phone);
+create index if not exists max_miniapp_leads_max_user_id_idx on public.max_miniapp_leads(max_user_id);
 
-```text
-MAX_BOT_TOKEN
-ADMIN_PASSWORD
-MAX_API_BASE_URL=https://platform-api.max.ru
-MAX_TLS_MODE=default
-SUPABASE_URL
-SUPABASE_SERVICE_ROLE_KEY
-PUBLIC_BASE_URL=https://adminka-max.vercel.app
-MAX_WEBHOOK_SECRET
-CRON_SECRET
-MAX_NOTIFY_CHAT_ID=
-MINIAPP_ALLOW_UNVERIFIED=true
-MINIAPP_REQUIRE_FRESH_AUTH=false
-MINIAPP_AUTH_MAX_AGE_SECONDS=3600
-```
+drop trigger if exists max_miniapp_leads_set_updated_at on public.max_miniapp_leads;
+create trigger max_miniapp_leads_set_updated_at
+before update on public.max_miniapp_leads
+for each row execute function public.set_updated_at();
 
-После изменения переменных всегда делай Redeploy.
+-- v16 mini app upgrade: фото замера, опции расчёта, очередь интеграции с CRM.
+alter table public.max_miniapp_leads add column if not exists mounting_type text;
+alter table public.max_miniapp_leads add column if not exists expected_date text;
+alter table public.max_miniapp_leads add column if not exists need_zippers boolean not null default false;
+alter table public.max_miniapp_leads add column if not exists install_per_m2 integer;
+alter table public.max_miniapp_leads add column if not exists install_total integer;
+alter table public.max_miniapp_leads add column if not exists zipper_total integer;
+alter table public.max_miniapp_leads add column if not exists photo_data_url text;
+alter table public.max_miniapp_leads add column if not exists photo_info jsonb not null default '{}'::jsonb;
+alter table public.max_miniapp_leads add column if not exists crm_status text not null default 'new';
+alter table public.max_miniapp_leads add column if not exists crm_result jsonb not null default '{}'::jsonb;
+
+create index if not exists max_miniapp_leads_crm_status_idx on public.max_miniapp_leads(crm_status);
+
+create table if not exists public.max_crm_leads (
+  id uuid primary key default gen_random_uuid(),
+  miniapp_lead_id uuid,
+  name text,
+  phone text,
+  address text,
+  object_type text,
+  status text not null default 'new',
+  area_m2 numeric,
+  estimated_total integer,
+  payload jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.max_crm_leads add column if not exists miniapp_lead_id uuid;
+alter table public.max_crm_leads add column if not exists name text;
+alter table public.max_crm_leads add column if not exists phone text;
+alter table public.max_crm_leads add column if not exists address text;
+alter table public.max_crm_leads add column if not exists object_type text;
+alter table public.max_crm_leads add column if not exists status text not null default 'new';
+alter table public.max_crm_leads add column if not exists area_m2 numeric;
+alter table public.max_crm_leads add column if not exists estimated_total integer;
+alter table public.max_crm_leads add column if not exists payload jsonb not null default '{}'::jsonb;
+alter table public.max_crm_leads add column if not exists updated_at timestamptz not null default now();
+
+alter table public.max_crm_leads enable row level security;
+
+create index if not exists max_crm_leads_created_at_idx on public.max_crm_leads(created_at desc);
+create index if not exists max_crm_leads_status_idx on public.max_crm_leads(status);
+create index if not exists max_crm_leads_phone_idx on public.max_crm_leads(phone);
+create index if not exists max_crm_leads_miniapp_lead_id_idx on public.max_crm_leads(miniapp_lead_id);
+
+drop trigger if exists max_crm_leads_set_updated_at on public.max_crm_leads;
+create trigger max_crm_leads_set_updated_at
+before update on public.max_crm_leads
+for each row execute function public.set_updated_at();

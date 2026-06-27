@@ -1,156 +1,90 @@
-import { fetchWithMaxTls, maxFetch } from './_max.js';
+import { getMaxApiBaseUrl, getTlsInfo, maskToken, maxFetch, requireAdmin, serializeFetchError } from './_max.js';
+import { hasSupabase, supabaseFetch } from './_supabase.js';
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-export function normalizeButtons(input) {
-  if (!Array.isArray(input)) return [];
-
-  return input
-    .map((btn) => ({
-      text: String(btn?.text || '').trim(),
-      url: String(btn?.url || '').trim()
-    }))
-    .filter((btn) => btn.text && /^https?:\/\//i.test(btn.url))
-    .slice(0, 6);
-}
-
-export function normalizeChatIds(input) {
-  const rawChatIds = Array.isArray(input) ? input : [];
-  const normalizedChatIds = rawChatIds.map((id) => Number(id));
-  const invalidChatIds = normalizedChatIds.filter((id) => !Number.isSafeInteger(id) || id === 0);
-  const uniqueChatIds = [...new Set(normalizedChatIds.filter((id) => Number.isSafeInteger(id) && id !== 0))];
-  return { normalizedChatIds, invalidChatIds, uniqueChatIds };
-}
-
-function buildAttachments(buttons, imagePayload) {
-  const attachments = [];
-
-  if (imagePayload) {
-    attachments.push({
-      type: 'image',
-      payload: imagePayload
-    });
-  }
-
-  if (buttons.length) {
-    attachments.push({
-      type: 'inline_keyboard',
-      payload: {
-        buttons: [
-          buttons.map((btn) => ({
-            type: 'link',
-            text: btn.text,
-            url: btn.url
-          }))
-        ]
-      }
-    });
-  }
-
-  return attachments;
-}
-
-function parseImageDataUrl(imageDataUrl) {
-  if (!imageDataUrl) return null;
-
-  const match = String(imageDataUrl).match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
-  if (!match) {
-    throw new Error('Некорректный формат изображения. Нужен JPG/PNG/GIF/WEBP через data URL.');
-  }
-
-  const contentType = match[1];
-  const base64 = match[2];
-  const buffer = Buffer.from(base64, 'base64');
-
-  if (buffer.length > 6 * 1024 * 1024) {
-    throw new Error('Изображение слишком большое. Для MVP ограничение 6 МБ. Сожмите фото.');
-  }
-
-  return { contentType, buffer };
-}
-
-export async function uploadImage(imageDataUrl) {
-  const image = parseImageDataUrl(imageDataUrl);
-  if (!image) return null;
-
-  const initResult = await maxFetch('/uploads?type=image', { method: 'POST' });
-  const initData = initResult.data;
-  if (!initResult.ok || !initData?.url) {
-    throw new Error(`MAX не выдал URL для загрузки изображения. HTTP ${initResult.status}: ${JSON.stringify(initData)}`);
-  }
-
-  const form = new FormData();
-  const blob = new Blob([image.buffer], { type: image.contentType });
-  const extension = image.contentType.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
-  form.append('data', blob, `post-image.${extension}`);
-
-  const uploadResponse = await fetchWithMaxTls(initData.url, {
-    method: 'POST',
-    body: form
-  });
-
-  const uploadData = await uploadResponse.json().catch(() => null);
-  if (!uploadResponse.ok || !uploadData) {
-    throw new Error('Ошибка загрузки изображения в MAX: ' + JSON.stringify(uploadData));
-  }
-
-  return uploadData;
-}
-
-export async function sendMessage(chatId, text, buttons, imagePayload, attempt = 1) {
-  const body = {
-    text,
-    attachments: buildAttachments(buttons, imagePayload)
-  };
-
-  const result = await maxFetch(`/messages?chat_id=${encodeURIComponent(chatId)}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-
-  const data = result.data;
-
-  const isAttachmentNotReady = data?.code === 'attachment.not.ready' || String(data?.message || '').includes('not.processed');
-  if (!result.ok && isAttachmentNotReady && attempt < 4) {
-    await sleep(1000 * attempt);
-    return sendMessage(chatId, text, buttons, imagePayload, attempt + 1);
-  }
+function envInfo(req) {
+  const token = String(process.env.MAX_BOT_TOKEN || '').trim();
+  const publicBaseUrl = String(process.env.PUBLIC_BASE_URL || '').trim();
+  const webhookSecret = String(process.env.MAX_WEBHOOK_SECRET || '').trim();
+  const host = req.headers['x-forwarded-host'] || req.headers.host || '';
+  const proto = req.headers['x-forwarded-proto'] || 'https';
+  const detectedBaseUrl = `${proto}://${host}`.replace(/\/+$/, '');
 
   return {
-    chatId,
-    ok: result.ok,
-    status: result.status,
-    data
+    maxApiBaseUrl: getMaxApiBaseUrl(),
+    tls: getTlsInfo(),
+    hasMaxToken: Boolean(token),
+    maxTokenMasked: maskToken(token),
+    maxTokenLength: token.length || 0,
+    publicBaseUrl: publicBaseUrl || null,
+    detectedBaseUrl,
+    webhookUrl: `${(publicBaseUrl || detectedBaseUrl).replace(/\/+$/, '')}/api/max-webhook`,
+    hasWebhookSecret: Boolean(webhookSecret),
+    webhookSecretLength: webhookSecret.length || 0,
+    webhookSecretValid: !webhookSecret || /^[a-zA-Z0-9_-]{5,256}$/.test(webhookSecret),
+    hasSupabaseUrl: Boolean(String(process.env.SUPABASE_URL || '').trim()),
+    hasSupabaseServiceRoleKey: Boolean(String(process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim())
   };
 }
 
-export async function sendToChats({ chatIds, text, buttons = [], imageDataUrl = null, delayBetweenMs = 150 }) {
-  const safeButtons = normalizeButtons(buttons);
-  const imagePayload = await uploadImage(imageDataUrl);
-
-  if (imagePayload) {
-    await sleep(900);
+async function runMaxTest(path, method = 'GET') {
+  try {
+    const result = await maxFetch(path, { method, timeoutMs: 15000 });
+    return {
+      ok: result.ok,
+      status: result.status,
+      baseUrl: result.baseUrl,
+      data: result.data
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      baseUrl: error.baseUrl || getMaxApiBaseUrl(),
+      error: error.message,
+      details: error.details || serializeFetchError(error)
+    };
   }
+}
 
-  const results = [];
-  for (const chatId of chatIds) {
-    const result = await sendMessage(chatId, text, safeButtons, imagePayload);
-    results.push(result);
-    await sleep(delayBetweenMs);
+async function runSupabaseTest() {
+  try {
+    if (!hasSupabase()) return { ok: false, skipped: true, error: 'Supabase не настроен' };
+    const data = await supabaseFetch('max_groups?select=id&limit=1', { method: 'GET' });
+    return { ok: true, rowsVisible: Array.isArray(data) ? data.length : 0 };
+  } catch (error) {
+    return { ok: false, error: error.message, details: error?.details || null };
   }
+}
 
-  const sent = results.filter((r) => r.ok).length;
-  const failed = results.length - sent;
+export default async function handler(req, res) {
+  try {
+    if (req.method !== 'GET') {
+      return res.status(405).json({ ok: false, error: 'Method not allowed' });
+    }
+    if (!requireAdmin(req, res)) return;
 
-  return {
-    ok: failed === 0,
-    sent,
-    failed,
-    hasImage: Boolean(imagePayload),
-    buttons: safeButtons,
-    results
-  };
+    const env = envInfo(req);
+    const maxMe = await runMaxTest('/me');
+    const maxSubscriptions = await runMaxTest('/subscriptions');
+    const supabase = await runSupabaseTest();
+
+    return res.status(200).json({
+      ok: maxMe.ok && supabase.ok,
+      checkedAt: new Date().toISOString(),
+      env,
+      tests: {
+        maxMe,
+        maxSubscriptions,
+        supabase
+      },
+      hints: [
+        'Если maxMe показывает fetch failed, проблема в соединении Vercel → MAX API, а не в Supabase.',
+        'Если maxMe показывает UNABLE_TO_GET_ISSUER_CERT_LOCALLY, Node/Vercel не доверяет цепочке сертификатов MAX API.',
+        'Самый быстрый тест: MAX_API_BASE_URL=https://platform-api.max.ru и Redeploy.',
+        'Если нужен platform-api2.max.ru: добавь официальный CA в MAX_CA_CERT_PEM / MAX_CA_CERT_BASE64 или временно поставь MAX_TLS_MODE=insecure только для теста.',
+        'MAX_WEBHOOK_SECRET должен быть 5–256 символов: A-Z, a-z, 0-9, underscore или дефис.'
+      ]
+    });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message, details: serializeFetchError(error) });
+  }
 }

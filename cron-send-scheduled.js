@@ -1,37 +1,45 @@
-import { requireAdmin, serializeFetchError } from './_max.js';
-import { hasSupabase, supabaseFetch, escapePostgrestValue } from './_supabase.js';
+import { hasSupabase, supabaseFetch } from './_supabase.js';
 
-export default async function handler(req, res) {
-  try {
-    if (!requireAdmin(req, res)) return;
+export async function saveSendLogs({ text, buttons, chatIds, results, hasImage }) {
+  if (!hasSupabase()) return { saved: false, reason: 'supabase_not_configured' };
 
-    if (!hasSupabase()) {
-      return res.status(400).json({ ok: false, error: 'Supabase не настроен' });
-    }
+  const now = new Date().toISOString();
+  const rows = (results || []).map((result) => ({
+    chat_id: Number(result.chatId),
+    post_text: String(text || '').slice(0, 4000),
+    buttons: Array.isArray(buttons) ? buttons : [],
+    has_image: Boolean(hasImage),
+    ok: Boolean(result.ok),
+    status: Number(result.status || 0),
+    response: result.data || result,
+    sent_at: now
+  }));
 
-    if (req.method === 'GET') {
-      const data = await supabaseFetch('max_scheduled_posts?select=id,post_text,chat_ids,group_names,buttons,has_image,scheduled_at,status,sent_at,last_error,attempt_count,result,created_at&order=scheduled_at.asc&limit=100');
-      return res.status(200).json({ ok: true, scheduled: data || [] });
-    }
-
-    if (req.method === 'DELETE') {
-      const id = req.query?.id || req.body?.id;
-      if (!id) return res.status(400).json({ ok: false, error: 'Не передан id запланированного поста' });
-
-      const data = await supabaseFetch(`max_scheduled_posts?id=eq.${escapePostgrestValue(id)}&status=eq.scheduled`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Prefer: 'return=representation'
-        },
-        body: JSON.stringify({ status: 'cancelled', last_error: 'Отменено из админки' })
+  if (!rows.length && Array.isArray(chatIds)) {
+    for (const chatId of chatIds) {
+      rows.push({
+        chat_id: Number(chatId),
+        post_text: String(text || '').slice(0, 4000),
+        buttons: Array.isArray(buttons) ? buttons : [],
+        has_image: Boolean(hasImage),
+        ok: false,
+        status: 0,
+        response: { error: 'No result' },
+        sent_at: now
       });
-
-      return res.status(200).json({ ok: true, cancelled: data?.length || 0, data });
     }
-
-    return res.status(405).json({ ok: false, error: 'Method not allowed' });
-  } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message, details: serializeFetchError(error) });
   }
+
+  if (!rows.length) return { saved: false, reason: 'no_rows' };
+
+  const data = await supabaseFetch('max_send_logs', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Prefer: 'return=minimal'
+    },
+    body: JSON.stringify(rows)
+  });
+
+  return { saved: true, count: rows.length, data };
 }
