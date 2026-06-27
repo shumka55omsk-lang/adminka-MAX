@@ -1,5 +1,5 @@
 import { getMaxApiBaseUrl, getTlsInfo, maskToken, maxFetch, requireAdmin, serializeFetchError } from './_max.js';
-import { getSupabaseClient } from './_supabase.js';
+import { hasSupabase, supabaseFetch } from './_supabase.js';
 
 function envInfo(req) {
   const token = String(process.env.MAX_BOT_TOKEN || '').trim();
@@ -47,16 +47,11 @@ async function runMaxTest(path, method = 'GET') {
 
 async function runSupabaseTest() {
   try {
-    const supabase = getSupabaseClient();
-    if (!supabase) return { ok: false, skipped: true, error: 'Supabase не настроен' };
-    const { data, error } = await supabase
-      .from('max_groups')
-      .select('id')
-      .limit(1);
-    if (error) return { ok: false, error: error.message, details: error };
+    if (!hasSupabase()) return { ok: false, skipped: true, error: 'Supabase не настроен' };
+    const data = await supabaseFetch('max_groups?select=id&limit=1', { method: 'GET' });
     return { ok: true, rowsVisible: Array.isArray(data) ? data.length : 0 };
   } catch (error) {
-    return { ok: false, error: error.message };
+    return { ok: false, error: error.message, details: error?.details || null };
   }
 }
 

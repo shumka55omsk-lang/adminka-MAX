@@ -1,3 +1,7 @@
+# MAX Admin MVP v8 — diagnostics fix
+
+Исправление v8: функция `/api/diagnostics` больше не падает с `status: 500` из-за неправильного импорта Supabase. Также интерфейс теперь показывает сырой ответ сервера, если API вернул не JSON.
+
 # MAX Admin MVP v7 — TLS fix for Vercel
 
 Эта версия исправляет проблему Vercel → MAX API:

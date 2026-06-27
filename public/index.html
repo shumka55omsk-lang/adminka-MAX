@@ -429,9 +429,17 @@
           'x-admin-password': getPassword()
         }
       });
-      const data = await response.json().catch(() => null);
+
+      const rawText = await response.text().catch(() => '');
+      let data = null;
+      try {
+        data = rawText ? JSON.parse(rawText) : null;
+      } catch {
+        data = null;
+      }
+
       if (!response.ok || !data?.ok) {
-        throw new Error(JSON.stringify(data || { status: response.status }, null, 2));
+        throw new Error(JSON.stringify(data || { status: response.status, raw: rawText.slice(0, 1500) }, null, 2));
       }
       return data;
     }
