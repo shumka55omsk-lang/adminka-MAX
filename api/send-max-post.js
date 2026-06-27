@@ -1,4 +1,4 @@
-import { authHeaders, getMaxApiBaseUrl, maxFetch, requireAdmin, requireToken, serializeFetchError } from './_max.js';
+import { fetchWithMaxTls, maxFetch, requireAdmin, requireToken, serializeFetchError } from './_max.js';
 import { saveSendLogs } from './_logs.js';
 
 export const config = {
@@ -87,7 +87,7 @@ async function uploadImage(imageDataUrl) {
   const extension = image.contentType.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
   form.append('data', blob, `post-image.${extension}`);
 
-  const uploadResponse = await fetch(initData.url, {
+  const uploadResponse = await fetchWithMaxTls(initData.url, {
     method: 'POST',
     body: form
   });

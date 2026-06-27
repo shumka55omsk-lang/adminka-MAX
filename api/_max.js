@@ -1,7 +1,73 @@
-const DEFAULT_MAX_API_BASE_URL = 'https://platform-api2.max.ru';
+import { Agent } from 'undici';
+
+const DEFAULT_MAX_API_BASE_URL = 'https://platform-api.max.ru';
+
+let cachedDispatcher = null;
+let cachedDispatcherKey = null;
 
 export function getMaxApiBaseUrl() {
   return String(process.env.MAX_API_BASE_URL || DEFAULT_MAX_API_BASE_URL).trim().replace(/\/+$/, '');
+}
+
+export function getMaxTlsMode() {
+  return String(process.env.MAX_TLS_MODE || 'default').trim().toLowerCase();
+}
+
+function getExtraCa() {
+  const pem = String(process.env.MAX_CA_CERT_PEM || '').trim();
+  if (pem) return pem.replace(/\\n/g, '\n');
+
+  const base64 = String(process.env.MAX_CA_CERT_BASE64 || '').trim();
+  if (base64) {
+    try {
+      return Buffer.from(base64, 'base64').toString('utf8');
+    } catch {
+      return '';
+    }
+  }
+
+  return '';
+}
+
+export function getTlsInfo() {
+  const mode = getMaxTlsMode();
+  const extraCa = getExtraCa();
+  return {
+    mode,
+    hasExtraCa: Boolean(extraCa),
+    extraCaLength: extraCa.length || 0,
+    insecureEnabled: mode === 'insecure'
+  };
+}
+
+function getDispatcher() {
+  const tlsInfo = getTlsInfo();
+  const key = `${tlsInfo.mode}:${tlsInfo.extraCaLength}`;
+  if (cachedDispatcher && cachedDispatcherKey === key) return cachedDispatcher;
+
+  cachedDispatcherKey = key;
+  cachedDispatcher = null;
+
+  if (tlsInfo.mode === 'insecure') {
+    cachedDispatcher = new Agent({
+      connect: {
+        rejectUnauthorized: false
+      }
+    });
+    return cachedDispatcher;
+  }
+
+  const ca = getExtraCa();
+  if (ca) {
+    cachedDispatcher = new Agent({
+      connect: {
+        ca
+      }
+    });
+    return cachedDispatcher;
+  }
+
+  return null;
 }
 
 export function maskToken(token = '') {
@@ -47,6 +113,20 @@ export function serializeFetchError(error) {
   };
 }
 
+function buildFetchOptions(options = {}, withAuth = true) {
+  const dispatcher = getDispatcher();
+  const result = {
+    ...options,
+    headers: withAuth ? authHeaders(options.headers || {}) : (options.headers || {})
+  };
+  if (dispatcher) result.dispatcher = dispatcher;
+  return result;
+}
+
+export async function fetchWithMaxTls(url, options = {}) {
+  return fetch(url, buildFetchOptions(options, false));
+}
+
 export async function maxFetch(path, options = {}) {
   const baseUrl = getMaxApiBaseUrl();
   const timeoutMs = options.timeoutMs || 15000;
@@ -55,9 +135,8 @@ export async function maxFetch(path, options = {}) {
 
   try {
     const response = await fetch(`${baseUrl}${path}`, {
-      ...options,
-      signal: controller.signal,
-      headers: authHeaders(options.headers || {})
+      ...buildFetchOptions(options, true),
+      signal: controller.signal
     });
     const text = await response.text();
     let data = null;
@@ -66,16 +145,21 @@ export async function maxFetch(path, options = {}) {
     } catch {
       data = { raw: text.slice(0, 1200) };
     }
-    return { ok: response.ok, status: response.status, data, baseUrl };
+    return { ok: response.ok, status: response.status, data, baseUrl, tls: getTlsInfo() };
   } catch (error) {
     const details = serializeFetchError(error);
+    const tlsInfo = getTlsInfo();
+    const isCertError = ['UNABLE_TO_GET_ISSUER_CERT_LOCALLY', 'SELF_SIGNED_CERT_IN_CHAIN', 'CERT_HAS_EXPIRED', 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'].includes(details.code || details.causeCode);
     const hint = details.name === 'AbortError'
       ? 'Тайм-аут запроса к MAX API. Проверь доступность домена MAX из Vercel.'
-      : 'Vercel не смог установить сетевое соединение с MAX API. Чаще всего причина: домен API, TLS/сертификат, DNS или сетевой доступ.';
+      : isCertError
+        ? 'Vercel/Node не доверяет TLS-сертификату MAX API. Для platform-api2.max.ru нужен доверенный сертификат Минцифры или временный TLS-режим insecure.'
+        : 'Vercel не смог установить сетевое соединение с MAX API. Чаще всего причина: домен API, TLS/сертификат, DNS или сетевой доступ.';
 
     const wrapped = new Error(`${hint} Детали: ${details.message}`);
     wrapped.details = details;
     wrapped.baseUrl = baseUrl;
+    wrapped.tls = tlsInfo;
     throw wrapped;
   } finally {
     clearTimeout(timer);

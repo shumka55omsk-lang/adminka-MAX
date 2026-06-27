@@ -1,4 +1,4 @@
-import { getMaxApiBaseUrl, maskToken, maxFetch, requireAdmin, serializeFetchError } from './_max.js';
+import { getMaxApiBaseUrl, getTlsInfo, maskToken, maxFetch, requireAdmin, serializeFetchError } from './_max.js';
 import { getSupabaseClient } from './_supabase.js';
 
 function envInfo(req) {
@@ -11,6 +11,7 @@ function envInfo(req) {
 
   return {
     maxApiBaseUrl: getMaxApiBaseUrl(),
+    tls: getTlsInfo(),
     hasMaxToken: Boolean(token),
     maxTokenMasked: maskToken(token),
     maxTokenLength: token.length || 0,
@@ -82,8 +83,9 @@ export default async function handler(req, res) {
       },
       hints: [
         'Если maxMe показывает fetch failed, проблема в соединении Vercel → MAX API, а не в Supabase.',
-        'Проверь MAX_API_BASE_URL. По документации MAX актуальный пример использует https://platform-api2.max.ru до 19 июля 2026.',
-        'Если стоит https://platform-api2.max.ru и Vercel падает по TLS/сертификату, временно попробуй https://platform-api.max.ru и сделай Redeploy.',
+        'Если maxMe показывает UNABLE_TO_GET_ISSUER_CERT_LOCALLY, Node/Vercel не доверяет цепочке сертификатов MAX API.',
+        'Самый быстрый тест: MAX_API_BASE_URL=https://platform-api.max.ru и Redeploy.',
+        'Если нужен platform-api2.max.ru: добавь официальный CA в MAX_CA_CERT_PEM / MAX_CA_CERT_BASE64 или временно поставь MAX_TLS_MODE=insecure только для теста.',
         'MAX_WEBHOOK_SECRET должен быть 5–256 символов: A-Z, a-z, 0-9, underscore или дефис.'
       ]
     });

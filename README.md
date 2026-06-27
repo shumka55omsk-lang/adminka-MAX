@@ -1,3 +1,50 @@
+# MAX Admin MVP v7 — TLS fix for Vercel
+
+Эта версия исправляет проблему Vercel → MAX API:
+
+```json
+UNABLE_TO_GET_ISSUER_CERT_LOCALLY
+unable to get local issuer certificate
+```
+
+Причина: `platform-api2.max.ru` может использовать цепочку сертификатов, которой Node.js/Vercel по умолчанию не доверяет. В MAX-документации указано, что при переходе на `platform-api2.max.ru` нужно добавить сертификат Минцифры в список доверенных.
+
+## Что попробовать сначала
+
+В Vercel поставьте:
+
+```env
+MAX_API_BASE_URL=https://platform-api.max.ru
+MAX_TLS_MODE=default
+```
+
+Сделайте **Redeploy** и нажмите в админке **Диагностика MAX API**.
+
+## Если нужен именно platform-api2.max.ru
+
+Вариант для production: добавить официальный CA в переменную:
+
+```env
+MAX_CA_CERT_PEM=-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----
+```
+
+или в base64:
+
+```env
+MAX_CA_CERT_BASE64=...
+```
+
+Временный тестовый вариант, если нужно быстро проверить бота:
+
+```env
+MAX_API_BASE_URL=https://platform-api2.max.ru
+MAX_TLS_MODE=insecure
+```
+
+После теста лучше не оставлять `insecure`, а перейти на CA или VPS/сервер, где сертификат Минцифры установлен в доверенные.
+
+---
+
 # MAX Admin MVP v5 + Supabase + Webhook
 
 Админка для рассылки постов в группы MAX через официального бота.
