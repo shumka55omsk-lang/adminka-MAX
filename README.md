@@ -1,58 +1,105 @@
-# MAX Admin MVP v14 — Mini App
+# MAX Admin MVP v15 — Hobby Router Fix + Mini App
 
-Это продолжение работающей админки рассылки MAX. В v14 добавлено мини-приложение для чат-бота MAX: клиент открывает форму внутри MAX, вводит размеры мягких окон, получает предварительный расчёт и отправляет заявку.
-
-## Что добавлено
-
-- `/miniapp` — клиентское мини-приложение для MAX.
-- `api/miniapp-submit.js` — приём заявок из мини-приложения.
-- `api/miniapp-leads.js` — просмотр последних заявок через админский пароль.
-- `api/_maxWebApp.js` — проверка подписи `window.WebApp.initData` по алгоритму MAX.
-- `max_miniapp_leads` — таблица Supabase для заявок.
-- Опциональное уведомление о заявке в MAX через `MAX_NOTIFY_CHAT_ID`.
-
-## Ссылка мини-приложения
-
-После деплоя на Vercel мини-приложение будет доступно по адресу:
+Версия v15 исправляет ошибку Vercel Hobby:
 
 ```text
-https://adminka-max.vercel.app/miniapp
+No more than 12 Serverless Functions can be added to a Deployment on the Hobby plan
 ```
 
-Именно эту ссылку нужно вставить в настройках бота MAX.
+## Что изменено
 
-## Как подключить мини-приложение к боту MAX
+В v14 каждая папка/файл в `api/*.js` превращалась в отдельную Serverless Function. На бесплатном Hobby-плане Vercel это упёрлось в лимит.
 
-1. Откройте платформу MAX для партнёров.
-2. Перейдите: `Чат-боты → Перейти → Расширенные настройки → Настроить`.
-3. Вставьте URL мини-приложения, например:
+В v15 все API объединены в одну функцию:
 
 ```text
-https://adminka-max.vercel.app/miniapp
+api/[...route].js
 ```
 
-4. Выберите вид кнопки открытия: `Открыть`, `Старт`, `Играть` или без названия.
-5. Нажмите `Сохранить`.
+Внутренние обработчики перенесены в:
 
-По требованиям MAX URL мини-приложения должен быть HTTPS, валидный, без пробелов и длиной не более 1024 символов.
+```text
+lib/api/
+```
 
-## Обновление Supabase
+Старые адреса остаются теми же:
 
-Выполните в Supabase SQL Editor содержимое файла:
+```text
+/api/groups
+/api/send-max-post
+/api/max-webhook
+/api/miniapp-submit
+/api/cron-send-scheduled
+/api/version
+```
+
+То есть фронтенд, Webhook MAX, мини-приложение и расписание продолжают работать по прежним URL.
+
+## Что есть в проекте
+
+- Админка рассылки MAX.
+- Webhook MAX.
+- Supabase: группы, история, шаблоны, расписание, заявки мини-приложения.
+- Расписание постов.
+- Мини-приложение `/miniapp` для заявки на мягкие окна.
+- Один серверный API-router для Vercel Hobby.
+
+## Как обновить
+
+1. Залей содержимое архива в корень GitHub-репозитория.
+2. Убедись, что папка `api` содержит только один файл:
+
+```text
+api/[...route].js
+```
+
+3. Убедись, что папка `lib/api` содержит остальные обработчики.
+4. Сделай Redeploy в Vercel.
+5. Проверь версию:
+
+```text
+https://adminka-max.vercel.app/api/version
+```
+
+Должно быть:
+
+```json
+{
+  "ok": true,
+  "version": "v15-hobby-router"
+}
+```
+
+## Supabase
+
+Если ты уже запускал SQL из v14, повторно запускать необязательно. Если таблицы мини-приложения ещё нет, выполни:
 
 ```text
 supabase/schema.sql
 ```
 
-После этого появится таблица:
+## Важно про GitHub
+
+Не оставляй старые API-файлы в папке `api`:
 
 ```text
-max_miniapp_leads
+api/groups.js
+api/send-max-post.js
+api/diagnostics.js
+...
+```
+
+Иначе Vercel снова посчитает их отдельными функциями и деплой упадёт на Hobby-плане.
+
+В папке `api` должен быть только:
+
+```text
+[...route].js
 ```
 
 ## Переменные Vercel
 
-Старые переменные оставить как есть:
+Оставь прежние переменные:
 
 ```text
 MAX_BOT_TOKEN
@@ -64,93 +111,10 @@ SUPABASE_SERVICE_ROLE_KEY
 PUBLIC_BASE_URL=https://adminka-max.vercel.app
 MAX_WEBHOOK_SECRET
 CRON_SECRET
-```
-
-Новые переменные для мини-приложения:
-
-```text
 MAX_NOTIFY_CHAT_ID=
 MINIAPP_ALLOW_UNVERIFIED=true
 MINIAPP_REQUIRE_FRESH_AUTH=false
 MINIAPP_AUTH_MAX_AGE_SECONDS=3600
 ```
 
-### MAX_NOTIFY_CHAT_ID
-
-Если указать `MAX_NOTIFY_CHAT_ID`, бот будет присылать уведомление о новой заявке в этот чат MAX.
-
-Для начала можно оставить пустым. Заявки всё равно будут сохраняться в Supabase.
-
-### MINIAPP_ALLOW_UNVERIFIED
-
-- `true` — форма работает даже при открытии в обычном браузере. Удобно для теста.
-- `false` — заявка принимается только если `initData` MAX прошёл проверку подписи. Лучше для production.
-
-## Как проверить
-
-1. Залейте v14 на Vercel.
-2. Выполните `supabase/schema.sql`.
-3. Откройте:
-
-```text
-https://adminka-max.vercel.app/api/version
-```
-
-Должно быть:
-
-```json
-{
-  "ok": true,
-  "version": "v14-miniapp"
-}
-```
-
-4. Откройте:
-
-```text
-https://adminka-max.vercel.app/miniapp
-```
-
-5. Отправьте тестовую заявку.
-6. Проверьте Supabase:
-
-```text
-Table Editor → max_miniapp_leads
-```
-
-## Что делает мини-приложение
-
-Клиент видит форму:
-
-- имя;
-- телефон;
-- кнопка `Подставить номер из MAX` через `window.WebApp.requestContact()`;
-- адрес / район;
-- тип объекта;
-- размеры проёмов;
-- предварительная площадь и цена;
-- комментарий;
-- отправка заявки.
-
-Предварительный расчёт сейчас стоит по формуле:
-
-```text
-площадь × 1500 ₽/м²
-```
-
-Это можно изменить в `public/miniapp/index.html`, константа:
-
-```js
-const PRICE_PER_M2 = 1500;
-```
-
-## Безопасность
-
-MAX Bridge передаёт `window.WebApp.initData`; сервер проверяет подпись по токену бота. Для теста можно оставить `MINIAPP_ALLOW_UNVERIFIED=true`, но после проверки лучше поставить:
-
-```text
-MINIAPP_ALLOW_UNVERIFIED=false
-MINIAPP_REQUIRE_FRESH_AUTH=true
-```
-
-После изменения переменных обязательно сделать Redeploy.
+После изменения переменных всегда делай Redeploy.
