@@ -10,7 +10,7 @@ function collectChatIds(value, found = new Set()) {
   if (!value || typeof value !== 'object') return found;
   if (Object.prototype.hasOwnProperty.call(value, 'chat_id')) {
     const id = Number(value.chat_id);
-    if (Number.isFinite(id)) found.add(id);
+    if (Number.isSafeInteger(id) && id !== 0) found.add(id);
   }
   for (const item of Object.values(value)) {
     if (item && typeof item === 'object') collectChatIds(item, found);

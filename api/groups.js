@@ -8,7 +8,8 @@ function readEnvGroups() {
     if (!Array.isArray(groups)) return [];
     return groups
       .filter((g) => g && g.active !== false && g.name && g.chat_id !== undefined)
-      .map((g) => ({ name: String(g.name), chat_id: Number(g.chat_id), active: true }));
+      .map((g) => ({ name: String(g.name), chat_id: Number(g.chat_id), active: true }))
+      .filter((g) => Number.isSafeInteger(g.chat_id) && g.chat_id !== 0);
   } catch {
     return [];
   }
@@ -41,7 +42,9 @@ async function upsertDbGroup(group) {
   };
 
   if (!payload.name) throw new Error('Введите название группы');
-  if (!Number.isFinite(payload.chat_id)) throw new Error('Некорректный chat_id');
+  if (!Number.isSafeInteger(payload.chat_id) || payload.chat_id === 0) {
+    throw new Error('Некорректный chat_id. Он не может быть пустым или равным 0.');
+  }
 
   return supabaseFetch('max_groups?on_conflict=chat_id', {
     method: 'POST',
@@ -55,7 +58,7 @@ async function upsertDbGroup(group) {
 
 async function deactivateDbGroup(chatId) {
   const numericChatId = Number(chatId);
-  if (!Number.isFinite(numericChatId)) throw new Error('Некорректный chat_id');
+  if (!Number.isSafeInteger(numericChatId) || numericChatId === 0) throw new Error('Некорректный chat_id');
 
   return supabaseFetch(`max_groups?chat_id=eq.${escapePostgrestValue(numericChatId)}`, {
     method: 'PATCH',

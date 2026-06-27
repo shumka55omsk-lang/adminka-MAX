@@ -148,9 +148,19 @@ export default async function handler(req, res) {
       return res.status(400).json({ ok: false, error: 'Текст MAX-сообщения должен быть до 4000 символов' });
     }
 
-    const uniqueChatIds = [...new Set((Array.isArray(chatIds) ? chatIds : [])
-      .map((id) => Number(id))
-      .filter((id) => Number.isFinite(id)))];
+    const rawChatIds = Array.isArray(chatIds) ? chatIds : [];
+    const normalizedChatIds = rawChatIds.map((id) => Number(id));
+    const invalidChatIds = normalizedChatIds.filter((id) => !Number.isSafeInteger(id) || id === 0);
+
+    if (invalidChatIds.length) {
+      return res.status(400).json({
+        ok: false,
+        error: 'Некорректный chat_id. Отправка в chat_id = 0 запрещена. Удалите неправильную группу из Supabase и дождитесь настоящего chat_id через Webhook.',
+        invalidChatIds
+      });
+    }
+
+    const uniqueChatIds = [...new Set(normalizedChatIds)];
 
     if (!uniqueChatIds.length) {
       return res.status(400).json({ ok: false, error: 'Выберите хотя бы одну группу' });

@@ -396,10 +396,24 @@
       return el('password').value.trim();
     }
 
+    function normalizeChatId(value) {
+      const text = String(value ?? '').trim();
+      if (!text) return null;
+      const id = Number(text);
+      if (!Number.isSafeInteger(id) || id === 0) return null;
+      return id;
+    }
+
     function getSelectedChatIds() {
       return Array.from(document.querySelectorAll('.group-check:checked'))
-        .map((node) => Number(node.value))
-        .filter((id) => Number.isFinite(id));
+        .map((node) => normalizeChatId(node.value))
+        .filter((id) => id !== null);
+    }
+
+    function getInvalidSelectedGroups() {
+      return Array.from(document.querySelectorAll('.group-check:checked'))
+        .filter((node) => normalizeChatId(node.value) === null)
+        .map((node) => node.dataset.name || node.value || 'без chat_id');
     }
 
     function getSelectedGroupNames() {
@@ -502,14 +516,24 @@
           return;
         }
 
-        el('groups').innerHTML = data.groups.map((g) => `
+        const validGroups = data.groups.filter((g) => normalizeChatId(g.chat_id) !== null);
+        const invalidGroups = data.groups.filter((g) => normalizeChatId(g.chat_id) === null);
+
+        if (!validGroups.length) {
+          el('groups').innerHTML = '<span class="muted">В Supabase есть только группы с некорректным chat_id. Удалите строки с chat_id = 0 и добавьте бота в тестовую группу.</span>';
+          setStatus(`Нет корректных групп для отправки. Некорректных строк: ${invalidGroups.length}.`, 'err');
+          return;
+        }
+
+        el('groups').innerHTML = validGroups.map((g) => `
           <label class="group">
             <input class="group-check" type="checkbox" value="${g.chat_id}" data-name="${escapeHtml(g.name)}" checked />
             <span>${escapeHtml(g.name)} <span class="muted">(${g.chat_id}${g.source ? ' · ' + escapeHtml(g.source) : ''}${g.last_update_type ? ' · ' + escapeHtml(g.last_update_type) : ''})</span></span>
           </label>
         `).join('');
 
-        setStatus(`Загружено групп: ${data.groups.length}. Хранилище: ${data.storage || 'неизвестно'}.`, 'ok');
+        const skippedText = invalidGroups.length ? ` Скрыто некорректных строк: ${invalidGroups.length}.` : '';
+        setStatus(`Загружено групп: ${validGroups.length}. Хранилище: ${data.storage || 'неизвестно'}.${skippedText}`, invalidGroups.length ? 'err' : 'ok');
       } catch (error) {
         setStatus('Ошибка загрузки групп:\n' + error.message, 'err');
       }
@@ -518,9 +542,10 @@
     async function addGroup() {
       try {
         const name = el('newGroupName').value.trim();
-        const chat_id = Number(el('newGroupChatId').value.trim());
+        const rawChatId = el('newGroupChatId').value.trim();
+        const chat_id = normalizeChatId(rawChatId);
         if (!name) return setStatus('Введите название группы.', 'err');
-        if (!Number.isFinite(chat_id)) return setStatus('Введите корректный chat_id.', 'err');
+        if (chat_id === null) return setStatus('Введите корректный chat_id. Он не может быть пустым или равным 0.', 'err');
 
         setStatus('Сохраняю группу в Supabase...');
         await apiFetch('/api/groups', {
@@ -600,6 +625,8 @@
       const imageFile = el('image').files[0] || null;
 
       if (!getPassword()) return setStatus('Введите пароль админки.', 'err');
+      const invalidSelected = getInvalidSelectedGroups();
+      if (invalidSelected.length) return setStatus(`Выбрана группа с некорректным chat_id: ${invalidSelected.join(', ')}. Удалите строку chat_id = 0 из Supabase.`, 'err');
       if (!chatIds.length) return setStatus('Выберите хотя бы одну группу.', 'err');
       if (text.length < 3) return setStatus('Введите текст поста.', 'err');
       if (text.length > 4000) return setStatus('Текст MAX-сообщения должен быть до 4000 символов.', 'err');

@@ -111,3 +111,17 @@ set title = excluded.title,
 -- insert into public.max_groups (name, chat_id, active)
 -- values ('Тестовая группа MAX', 123456789, true)
 -- on conflict (chat_id) do update set name = excluded.name, active = true;
+
+-- v9 cleanup: удаляем ошибочно созданные группы с chat_id = 0.
+delete from public.max_groups where chat_id = 0;
+
+-- v9 safety: chat_id не должен быть 0.
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'max_groups_chat_id_not_zero'
+  ) then
+    alter table public.max_groups
+      add constraint max_groups_chat_id_not_zero check (chat_id <> 0);
+  end if;
+end $$;

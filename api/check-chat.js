@@ -10,8 +10,8 @@ export default async function handler(req, res) {
 
     const { chat_id } = req.body || {};
     const chatId = Number(chat_id);
-    if (!Number.isFinite(chatId)) {
-      return res.status(400).json({ ok: false, error: 'Некорректный chat_id' });
+    if (!Number.isSafeInteger(chatId) || chatId === 0) {
+      return res.status(400).json({ ok: false, error: 'Некорректный chat_id. Он не может быть пустым или равным 0.' });
     }
 
     const result = await maxFetch(`/chats/${encodeURIComponent(chatId)}/members/me`, { method: 'GET' });
