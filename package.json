@@ -1,6 +1,6 @@
 {
-  "name": "max-admin-mvp-v15-hobby-router",
-  "version": "15.0.0",
+  "name": "max-admin-mvp-v17-no-vercel-json",
+  "version": "17.0.0",
   "private": true,
   "type": "module",
   "scripts": {

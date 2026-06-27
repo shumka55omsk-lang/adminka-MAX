@@ -220,3 +220,55 @@ drop trigger if exists max_miniapp_leads_set_updated_at on public.max_miniapp_le
 create trigger max_miniapp_leads_set_updated_at
 before update on public.max_miniapp_leads
 for each row execute function public.set_updated_at();
+
+-- v16 mini app upgrade: фото замера, опции расчёта, очередь интеграции с CRM.
+alter table public.max_miniapp_leads add column if not exists mounting_type text;
+alter table public.max_miniapp_leads add column if not exists expected_date text;
+alter table public.max_miniapp_leads add column if not exists need_zippers boolean not null default false;
+alter table public.max_miniapp_leads add column if not exists install_per_m2 integer;
+alter table public.max_miniapp_leads add column if not exists install_total integer;
+alter table public.max_miniapp_leads add column if not exists zipper_total integer;
+alter table public.max_miniapp_leads add column if not exists photo_data_url text;
+alter table public.max_miniapp_leads add column if not exists photo_info jsonb not null default '{}'::jsonb;
+alter table public.max_miniapp_leads add column if not exists crm_status text not null default 'new';
+alter table public.max_miniapp_leads add column if not exists crm_result jsonb not null default '{}'::jsonb;
+
+create index if not exists max_miniapp_leads_crm_status_idx on public.max_miniapp_leads(crm_status);
+
+create table if not exists public.max_crm_leads (
+  id uuid primary key default gen_random_uuid(),
+  miniapp_lead_id uuid,
+  name text,
+  phone text,
+  address text,
+  object_type text,
+  status text not null default 'new',
+  area_m2 numeric,
+  estimated_total integer,
+  payload jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.max_crm_leads add column if not exists miniapp_lead_id uuid;
+alter table public.max_crm_leads add column if not exists name text;
+alter table public.max_crm_leads add column if not exists phone text;
+alter table public.max_crm_leads add column if not exists address text;
+alter table public.max_crm_leads add column if not exists object_type text;
+alter table public.max_crm_leads add column if not exists status text not null default 'new';
+alter table public.max_crm_leads add column if not exists area_m2 numeric;
+alter table public.max_crm_leads add column if not exists estimated_total integer;
+alter table public.max_crm_leads add column if not exists payload jsonb not null default '{}'::jsonb;
+alter table public.max_crm_leads add column if not exists updated_at timestamptz not null default now();
+
+alter table public.max_crm_leads enable row level security;
+
+create index if not exists max_crm_leads_created_at_idx on public.max_crm_leads(created_at desc);
+create index if not exists max_crm_leads_status_idx on public.max_crm_leads(status);
+create index if not exists max_crm_leads_phone_idx on public.max_crm_leads(phone);
+create index if not exists max_crm_leads_miniapp_lead_id_idx on public.max_crm_leads(miniapp_lead_id);
+
+drop trigger if exists max_crm_leads_set_updated_at on public.max_crm_leads;
+create trigger max_crm_leads_set_updated_at
+before update on public.max_crm_leads
+for each row execute function public.set_updated_at();

@@ -14,11 +14,11 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v15-hobby-router',
-  builtAt: '2026-06-28T00:30:00Z',
+  version: 'v17-no-vercel-json',
+  builtAt: '2026-06-28T01:35:00Z',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
-  reason: 'Vercel Hobby limit: no more than 12 Serverless Functions'
+  reason: 'Vercel Hobby compatible router + no vercel.json to avoid invalid config deployment error'
 };
 
 const routes = new Map([
