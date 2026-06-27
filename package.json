@@ -1,0 +1,14 @@
+{
+  "name": "max-admin-mvp-v4-webhook",
+  "version": "4.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "vercel dev"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {}
+}
