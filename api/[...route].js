@@ -14,11 +14,11 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v17-no-vercel-json',
-  builtAt: '2026-06-28T01:35:00Z',
+  version: 'v18-schema-fix',
+  builtAt: '2026-06-27T19:25:00Z',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
-  reason: 'Vercel Hobby compatible router + no vercel.json to avoid invalid config deployment error'
+  reason: 'Vercel Hobby compatible router + Supabase miniapp schema fallback'
 };
 
 const routes = new Map([
