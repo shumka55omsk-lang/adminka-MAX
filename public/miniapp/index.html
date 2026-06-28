@@ -382,7 +382,7 @@
         </div>
       </div>
       <div class="breakdown" id="breakdown">Добавьте размеры, чтобы увидеть расчёт.</div>
-      <div id="priceSource" class="mini-note">Цены загружаются...</div>
+      <div id="priceSource" class="mini-note" style="display:none" aria-hidden="true"></div>
       <div class="mini-note">Это предварительный расчёт. Точная цена зависит от крепления, окантовки, молний, сложности доступа и замера.</div>
     </section>
 
@@ -671,7 +671,9 @@
       CONFIG.priceSource = storage || 'default';
       const source = $('priceSource');
       if (source) {
-        source.textContent = `Цены: ${CONFIG.pricePerM2} ₽/м² · монтаж ${CONFIG.installPerM2} ₽/м² · молния ${CONFIG.zipperPerOpening} ₽ · минимум ${CONFIG.minOrder} ₽ (${CONFIG.priceSource === 'supabase' ? 'из Supabase' : 'по умолчанию'})`;
+        source.textContent = '';
+        source.style.display = 'none';
+        source.setAttribute('aria-hidden', 'true');
       }
     }
 
@@ -683,7 +685,11 @@
         applyPriceSettings(data.settings || {}, data.storage);
       } catch (error) {
         const source = $('priceSource');
-        if (source) source.textContent = 'Цены по умолчанию. Не удалось загрузить настройки из Supabase.';
+        if (source) {
+          source.textContent = '';
+          source.style.display = 'none';
+          source.setAttribute('aria-hidden', 'true');
+        }
         console.warn('Price settings warning', error);
       }
       calculate();
@@ -705,7 +711,7 @@
       $('area').textContent = area.toFixed(2);
       $('total').textContent = money(total);
       $('breakdown').innerHTML = area > 0
-        ? `Плёнка и окантовка: ${money(base)} ₽<br>Монтаж: ${needInstall ? money(install) + ' ₽' : 'не нужен'}<br>Молнии: ${needZippers ? money(zippers) + ' ₽' : 'не нужны'}<br>Минимальный заказ: ${money(CONFIG.minOrder)} ₽`
+        ? 'Предварительная сумма рассчитана по вашим размерам. Точную стоимость подтвердим после уточнения крепления и замера.'
         : 'Добавьте размеры, чтобы увидеть расчёт.';
 
       return {
