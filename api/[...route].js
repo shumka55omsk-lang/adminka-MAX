@@ -20,11 +20,11 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v26-hide-miniapp-prices',
-  builtAt: '2026-06-28T06:10:00Z',
+  version: 'v27-crm-leads-board',
+  builtAt: '2026-06-28T06:40:00Z',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
-  reason: 'Vercel Hobby router + UX Pro admin redesign + hidden client-facing price settings in miniapp'
+  reason: 'Vercel Hobby router + CRM leads board + hidden client-facing price settings in miniapp'
 };
 
 const routes = new Map([

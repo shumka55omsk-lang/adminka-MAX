@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MAX Admin v26</title>
+  <title>MAX Admin v27</title>
   <style>
     :root {
       --bg: #09111f;
@@ -691,6 +691,186 @@
       }
     }
 
+
+
+    .crm-toolbar {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 12px;
+      align-items: end;
+      margin: 16px 0;
+    }
+
+    .crm-kpis {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      margin: 14px 0 16px;
+    }
+
+    .crm-kpi {
+      padding: 16px;
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(248,250,252,.94));
+      border: 1px solid var(--line);
+      box-shadow: 0 8px 20px rgba(2,6,23,.04);
+    }
+
+    .crm-kpi strong {
+      display: block;
+      font-size: 26px;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+
+    .crm-kpi span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .lead-board {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .lead-card {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: rgba(255,255,255,.96);
+      box-shadow: 0 10px 26px rgba(2,6,23,.06);
+    }
+
+    .lead-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .lead-name {
+      font-size: 17px;
+      line-height: 1.15;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      margin-bottom: 5px;
+    }
+
+    .lead-meta {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .lead-status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      background: #eef2ff;
+      color: #3730a3;
+    }
+
+    .lead-status.new { background: #eff6ff; color: #1d4ed8; }
+    .lead-status.in_work { background: #fff7ed; color: #c2410c; }
+    .lead-status.measure_scheduled { background: #ecfdf3; color: #027a48; }
+    .lead-status.estimate_sent { background: #f5f3ff; color: #6d28d9; }
+    .lead-status.ordered { background: #dcfce7; color: #166534; }
+    .lead-status.rejected { background: #fff1f2; color: #be123c; }
+    .lead-status.duplicate { background: #f1f5f9; color: #475569; }
+
+    .lead-data {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .lead-data div {
+      padding: 9px 10px;
+      border-radius: 14px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+    }
+
+    .lead-data b {
+      display: block;
+      color: #0f172a;
+      margin-bottom: 2px;
+    }
+
+    .lead-photo {
+      width: 100%;
+      max-height: 170px;
+      object-fit: cover;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #f8fafc;
+    }
+
+    .lead-note {
+      min-height: 74px;
+      font-size: 14px;
+      padding: 11px 12px;
+      border-radius: 16px;
+    }
+
+    .lead-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .lead-actions a,
+    .lead-actions button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 10px 11px;
+      border-radius: 14px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 900;
+      border: 1px solid var(--line-strong);
+      background: rgba(255,255,255,.94);
+      color: #0f172a;
+      box-shadow: none;
+    }
+
+    .lead-actions button.primary-action {
+      grid-column: 1 / -1;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #fff;
+      border: 0;
+    }
+
+    .lead-full {
+      grid-column: 1 / -1;
+    }
+
+    .crm-empty {
+      grid-column: 1 / -1;
+      padding: 18px;
+      border-radius: 18px;
+      background: #f8fafc;
+      border: 1px dashed var(--line-strong);
+      color: var(--muted);
+      text-align: center;
+    }
+
     @media (max-width: 980px) {
       .side-nav { display: none; }
       .hero-grid,
@@ -739,7 +919,7 @@
     <section class="hero">
       <div class="hero-grid">
         <div>
-          <div class="hero-badge">MAX Admin · v26</div>
+          <div class="hero-badge">MAX Admin · v27</div>
           <h1 class="hero-title">Удобная панель управления рассылками, заявками и mini app MAX</h1>
           <p class="hero-text">Добавил боковое меню, быстрый дашборд, сворачиваемые разделы и более удобную структуру для ежедневной работы с постами, группами, заявками и аудиториями.</p>
           <div class="hero-meta">
@@ -753,7 +933,7 @@
           <div class="hero-stat"><strong>1</strong><span>Единая админка для постов, групп, шаблонов и статусов.</span></div>
           <div class="hero-stat"><strong>MAX</strong><span>Бот, Webhook и mini app работают в одной системе.</span></div>
           <div class="hero-stat"><strong>CRM</strong><span>Заявки, аудитории и источники переходов хранятся в Supabase.</span></div>
-          <div class="hero-stat"><strong>v26</strong><span>Клиентские тарифы скрыты в mini app, UX Pro сохранён.</span></div>
+          <div class="hero-stat"><strong>v27</strong><span>CRM-доска заявок, статусы и быстрые действия.</span></div>
         </div>
       </div>
       <div class="section-nav">
@@ -773,9 +953,9 @@
       <div id="topStatusDot" class="top-status-dot"></div>
       <div>
         <div id="topStatusTitle" class="top-status-title">Статус: готово</div>
-        <div id="topStatusMessage" class="top-status-message">Готово к работе. v26: тарифы скрыты в mini app, UX Pro сохранён.</div>
+        <div id="topStatusMessage" class="top-status-message">Готово к работе. v27: CRM-доска заявок, статусы и быстрые действия.</div>
       </div>
-      <div class="version-badge">v26</div>
+      <div class="version-badge">v27</div>
       <div id="topStatusTime" class="top-status-time">—</div>
     </div>
 
@@ -963,13 +1143,44 @@
     </section>
 
     <section id="leadsSection" class="card">
-      <div class="card-head"><div><div class="card-kicker">Заявки</div><h2>Статистика заявок из мини-приложения</h2><p class="sub">Следи за источниками и кампаниями, которые приводят реальные обращения.</p></div><button class="secondary" id="loadLeadStatsBtn" type="button" style="max-width:240px">Обновить статистику</button></div>
-      <div class="row" style="margin-bottom:12px; display:none">
-        <h2 style="flex:2">Статистика заявок из мини-приложения</h2>
-        <button class="secondary" type="button">Обновить статистику</button>
+      <div class="card-head"><div><div class="card-kicker">CRM</div><h2>Заявки из мини-приложения</h2><p class="sub">Карточки клиентов, статусы, поиск, быстрые кнопки связи и заметки по обработке заявки.</p></div><button class="secondary" id="loadMiniappLeadsBtn" type="button" style="max-width:240px">Обновить заявки</button></div>
+
+      <div id="crmKpis" class="crm-kpis">
+        <div class="crm-kpi"><strong>—</strong><span>Всего заявок</span></div>
+        <div class="crm-kpi"><strong>—</strong><span>Новые</span></div>
+        <div class="crm-kpi"><strong>—</strong><span>В работе / замер</span></div>
+        <div class="crm-kpi"><strong>—</strong><span>Заказы</span></div>
+        <div class="crm-kpi"><strong>—</strong><span>Предварительная сумма</span></div>
       </div>
-      <div id="leadStats" class="history-list muted">Статистика ещё не загружена.</div>
-      <p class="sub" style="margin-top:10px">Заявки группируются по UTM-кампании и источнику. Так видно, какие посты дают заявки.</p>
+
+      <div class="crm-toolbar">
+        <div>
+          <label class="title" for="crmStatusFilter">Статус</label>
+          <select id="crmStatusFilter">
+            <option value="all">Все заявки</option>
+            <option value="new">Новые</option>
+            <option value="in_work">В работе</option>
+            <option value="measure_scheduled">Замер назначен</option>
+            <option value="estimate_sent">Расчёт отправлен</option>
+            <option value="ordered">Заказ</option>
+            <option value="rejected">Отказ</option>
+            <option value="duplicate">Дубль</option>
+          </select>
+        </div>
+        <div>
+          <label class="title" for="crmSearch">Поиск</label>
+          <input id="crmSearch" placeholder="Телефон, имя, адрес" />
+        </div>
+        <div>
+          <label class="title" for="crmCampaignFilter">Кампания</label>
+          <input id="crmCampaignFilter" placeholder="utm_campaign" />
+        </div>
+        <button class="secondary" id="loadLeadStatsBtn" type="button">Статистика UTM</button>
+      </div>
+
+      <div id="crmBoard" class="lead-board muted">Введите пароль и нажмите “Обновить заявки”.</div>
+      <div id="leadStats" class="history-list muted" style="margin-top:14px;display:none">Статистика ещё не загружена.</div>
+      <p class="sub" style="margin-top:10px">Статусы и заметки сохраняются в Supabase. Если новые поля ещё не созданы, примените hotfix-crm-leads-board.sql.</p>
     </section>
 
     <section id="audienceSection" class="card">
@@ -1631,6 +1842,180 @@
       }).join('');
     }
 
+
+    const CRM_STATUS_LABELS = {
+      new: 'Новая',
+      in_work: 'В работе',
+      measure_scheduled: 'Замер назначен',
+      estimate_sent: 'Расчёт отправлен',
+      ordered: 'Заказ',
+      rejected: 'Отказ',
+      duplicate: 'Дубль'
+    };
+
+    function normalizeCrmStatus(value) {
+      return CRM_STATUS_LABELS[value] ? value : 'new';
+    }
+
+    function formatRub(value) {
+      return `${Number(value || 0).toLocaleString('ru-RU')} ₽`;
+    }
+
+    function normalizePhoneForLink(value) {
+      const digits = String(value || '').replace(/\D/g, '');
+      if (!digits) return '';
+      if (digits.length === 11 && digits.startsWith('8')) return `7${digits.slice(1)}`;
+      return digits;
+    }
+
+    function parseWindows(value) {
+      if (Array.isArray(value)) return value;
+      if (typeof value === 'string') {
+        try {
+          const parsed = JSON.parse(value);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch { return []; }
+      }
+      return [];
+    }
+
+    function renderCrmKpis(summary = {}) {
+      const byStatus = summary.byStatus || {};
+      const inWork = Number(byStatus.in_work || 0) + Number(byStatus.measure_scheduled || 0) + Number(byStatus.estimate_sent || 0);
+      const html = `
+        <div class="crm-kpi"><strong>${Number(summary.total || 0)}</strong><span>Всего заявок</span></div>
+        <div class="crm-kpi"><strong>${Number(byStatus.new || 0)}</strong><span>Новые</span></div>
+        <div class="crm-kpi"><strong>${inWork}</strong><span>В работе / замер</span></div>
+        <div class="crm-kpi"><strong>${Number(byStatus.ordered || 0)}</strong><span>Заказы</span></div>
+        <div class="crm-kpi"><strong>${formatRub(summary.totalEstimate || 0)}</strong><span>Предварительная сумма</span></div>
+      `;
+      const box = el('crmKpis');
+      if (box) box.innerHTML = html;
+    }
+
+    function leadCardHtml(lead) {
+      const id = Number(lead.id || 0);
+      const status = normalizeCrmStatus(lead.crm_status || 'new');
+      const statusLabel = CRM_STATUS_LABELS[status] || 'Новая';
+      const created = lead.created_at ? new Date(lead.created_at).toLocaleString('ru-RU') : 'без даты';
+      const name = lead.name || 'Без имени';
+      const phone = lead.phone || '';
+      const phoneLink = normalizePhoneForLink(phone);
+      const windows = parseWindows(lead.windows);
+      const sizes = windows.length
+        ? windows.slice(0, 4).map((w, i) => `${i + 1}) ${Number(w.widthCm || 0)}×${Number(w.heightCm || 0)} см × ${Number(w.count || 1)} шт.`).join('<br>')
+        : 'размеры не указаны';
+      const moreSizes = windows.length > 4 ? `<br>+ ещё ${windows.length - 4}` : '';
+      const note = lead.crm_note || lead.crm_result?.note || '';
+      const nextAction = lead.crm_next_action || lead.crm_result?.next_action || '';
+      const campaign = lead.utm_campaign || 'без кампании';
+      const content = lead.utm_content || 'без поста';
+      const source = lead.source || lead.utm_source || '—';
+      const hasPhoto = Boolean(lead.photo_data_url);
+      const waHref = phoneLink ? `https://wa.me/${phoneLink}` : '';
+      const telHref = phoneLink ? `tel:+${phoneLink}` : '';
+
+      return `
+        <article class="lead-card" data-lead-id="${id}">
+          <div class="lead-top">
+            <div>
+              <div class="lead-name">${escapeHtml(name)}</div>
+              <div class="lead-meta">#${id || '—'} · ${escapeHtml(created)}</div>
+            </div>
+            <span class="lead-status ${status}">${escapeHtml(statusLabel)}</span>
+          </div>
+
+          ${hasPhoto ? `<img class="lead-photo" src="${escapeHtml(lead.photo_data_url)}" alt="Фото заявки #${id}">` : ''}
+
+          <div class="lead-data">
+            <div><b>Телефон</b>${phone ? escapeHtml(phone) : 'не указан'}</div>
+            <div><b>Объект</b>${escapeHtml(lead.object_type || 'не указан')}</div>
+            <div><b>Сумма</b>${lead.estimated_total ? formatRub(lead.estimated_total) : '—'}</div>
+            <div><b>Площадь</b>${lead.area_m2 ? `${Number(lead.area_m2).toLocaleString('ru-RU')} м²` : '—'}</div>
+            <div class="lead-full"><b>Адрес</b>${escapeHtml(lead.address || 'не указан')}</div>
+            <div class="lead-full"><b>Размеры</b>${sizes}${moreSizes}</div>
+            <div class="lead-full"><b>Источник</b>${escapeHtml(source)} · ${escapeHtml(campaign)} · ${escapeHtml(content)}</div>
+            ${lead.comment ? `<div class="lead-full"><b>Комментарий клиента</b>${escapeHtml(lead.comment)}</div>` : ''}
+          </div>
+
+          <div>
+            <label class="title" for="leadStatus${id}">Статус заявки</label>
+            <select id="leadStatus${id}" data-lead-status="${id}">
+              ${Object.entries(CRM_STATUS_LABELS).map(([key, label]) => `<option value="${key}" ${key === status ? 'selected' : ''}>${escapeHtml(label)}</option>`).join('')}
+            </select>
+          </div>
+
+          <div>
+            <label class="title" for="leadNote${id}">Заметка менеджера</label>
+            <textarea class="lead-note" id="leadNote${id}" data-lead-note="${id}" placeholder="Например: позвонить завтра, ждёт замер, дорого...">${escapeHtml(note)}</textarea>
+          </div>
+
+          <div>
+            <label class="title" for="leadNext${id}">Следующее действие</label>
+            <input id="leadNext${id}" data-lead-next="${id}" value="${escapeHtml(nextAction)}" placeholder="Например: позвонить 29.06 в 12:00" />
+          </div>
+
+          <div class="lead-actions">
+            ${waHref ? `<a href="${escapeHtml(waHref)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>` : '<button type="button" disabled>WhatsApp</button>'}
+            ${telHref ? `<a href="${escapeHtml(telHref)}">Позвонить</a>` : '<button type="button" disabled>Позвонить</button>'}
+            <button class="primary-action" type="button" onclick="updateMiniappLead(${id})">Сохранить статус</button>
+          </div>
+        </article>
+      `;
+    }
+
+    async function loadMiniappLeads() {
+      const box = el('crmBoard');
+      if (!box) return;
+      if (!getPassword()) {
+        box.className = 'lead-board muted';
+        box.innerHTML = '<div class="crm-empty">Введите пароль, чтобы загрузить заявки.</div>';
+        return;
+      }
+
+      try {
+        setStatus('Загружаю заявки из мини-приложения...');
+        const params = new URLSearchParams();
+        params.set('limit', '300');
+        params.set('status', el('crmStatusFilter')?.value || 'all');
+        const search = el('crmSearch')?.value || '';
+        const campaign = el('crmCampaignFilter')?.value || '';
+        if (search.trim()) params.set('search', search.trim());
+        if (campaign.trim()) params.set('campaign', campaign.trim());
+        const data = await apiFetch(`/api/miniapp-leads?${params.toString()}`);
+        const leads = Array.isArray(data.leads) ? data.leads : [];
+        renderCrmKpis(data.summary || {});
+        box.className = 'lead-board';
+        box.innerHTML = leads.length
+          ? leads.map(leadCardHtml).join('')
+          : '<div class="crm-empty">Заявок по выбранному фильтру пока нет.</div>';
+        setStatus(`Заявки загружены. Найдено: ${leads.length}.`, 'ok');
+      } catch (error) {
+        box.className = 'lead-board muted';
+        box.innerHTML = '<div class="crm-empty">Не удалось загрузить заявки.</div>';
+        setStatus('Ошибка загрузки заявок:\n' + error.message, 'err');
+      }
+    }
+
+    async function updateMiniappLead(id) {
+      try {
+        if (!getPassword()) return setStatus('Введите пароль админки.', 'err');
+        const status = document.querySelector(`[data-lead-status="${id}"]`)?.value || 'new';
+        const note = document.querySelector(`[data-lead-note="${id}"]`)?.value || '';
+        const nextAction = document.querySelector(`[data-lead-next="${id}"]`)?.value || '';
+        setStatus(`Сохраняю заявку #${id}...`);
+        const data = await apiFetch('/api/miniapp-leads', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, crm_status: status, crm_note: note, crm_next_action: nextAction })
+        });
+        await loadMiniappLeads();
+        setStatus(`Заявка #${id} сохранена. Режим: ${data.mode || 'full'}.`, 'ok');
+      } catch (error) {
+        setStatus(`Ошибка сохранения заявки #${id}:\n` + error.message, 'err');
+      }
+    }
+
     async function loadLeadStats() {
       const box = el('leadStats');
       if (!box) return;
@@ -1774,6 +2159,7 @@
       await renderScheduledPosts();
       await loadTemplates();
       await loadPriceSettings();
+      await loadMiniappLeads();
       await loadLeadStats();
       await loadAudienceStats();
     }
@@ -1842,6 +2228,11 @@
     el('loadPricesBtn')?.addEventListener('click', loadPriceSettings);
     el('savePricesBtn')?.addEventListener('click', savePriceSettings);
     el('loadLeadStatsBtn')?.addEventListener('click', loadLeadStats);
+    el('loadMiniappLeadsBtn')?.addEventListener('click', loadMiniappLeads);
+    ['crmStatusFilter','crmSearch','crmCampaignFilter'].forEach((id) => {
+      el(id)?.addEventListener('change', loadMiniappLeads);
+      el(id)?.addEventListener('keydown', (event) => { if (event.key === 'Enter') loadMiniappLeads(); });
+    });
     el('loadAudienceStatsBtn')?.addEventListener('click', loadAudienceStats);
     el('exportYandexPhonesBtn')?.addEventListener('click', () => downloadYandexAudience('plain'));
     el('exportYandexHashBtn')?.addEventListener('click', () => downloadYandexAudience('sha256'));
