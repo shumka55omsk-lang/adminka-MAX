@@ -2,7 +2,9 @@ import checkChat from '../lib/api/check-chat.js';
 import cronSendScheduled from '../lib/api/cron-send-scheduled.js';
 import diagnostics from '../lib/api/diagnostics.js';
 import groups from '../lib/api/groups.js';
+import groupRating from '../lib/api/group-rating.js';
 import history from '../lib/api/history.js';
+import exportReports from '../lib/api/export-reports.js';
 import leadStats from '../lib/api/lead-stats.js';
 import audienceStats from '../lib/api/audience-stats.js';
 import maxWebhook from '../lib/api/max-webhook.js';
@@ -20,11 +22,11 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v27-crm-leads-board',
-  builtAt: '2026-06-28T06:40:00Z',
+  version: 'v28-growth-suite',
+  builtAt: '2026-06-28T14:25:00Z',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
-  reason: 'Vercel Hobby router + CRM leads board + hidden client-facing price settings in miniapp'
+  reason: 'Vercel Hobby router + CRM board + calendar + templates + group rating + miniapp quiz + anti-spam + exports'
 };
 
 const routes = new Map([
@@ -33,6 +35,8 @@ const routes = new Map([
   ['cron-send-scheduled', cronSendScheduled],
   ['diagnostics', diagnostics],
   ['groups', groups],
+  ['group-rating', groupRating],
+  ['export-reports', exportReports],
   ['history', history],
   ['lead-stats', leadStats],
   ['max-webhook', maxWebhook],

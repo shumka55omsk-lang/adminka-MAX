@@ -285,6 +285,34 @@
     .check-line input { width: auto; margin: 2px 0 0; flex: 0 0 auto; }
     .tiny-link { color: var(--accent2); font-weight: 800; text-decoration: underline; text-underline-offset: 2px; }
 
+
+
+    .quiz-progress {
+      position: sticky;
+      top: 8px;
+      z-index: 9;
+      margin: 10px 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: rgba(255,255,255,.86);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 10px 25px rgba(15,23,42,.08);
+    }
+    .quiz-progress-top { display:flex; justify-content:space-between; gap:10px; font-size:13px; font-weight:850; color:var(--accent2); }
+    .quiz-bar { height: 8px; border-radius:999px; background:#dceee9; overflow:hidden; margin-top:9px; }
+    .quiz-bar-fill { height:100%; width:20%; background:linear-gradient(135deg, var(--accent), var(--warm)); border-radius:999px; transition:width .22s ease; }
+    .quiz-step { display:none; }
+    .quiz-step.active { display:block; animation: stepIn .18s ease; }
+    @keyframes stepIn { from { opacity:.2; transform:translateY(8px); } to { opacity:1; transform:none; } }
+    .quiz-nav { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+    .quiz-nav button { position:static; }
+    .honeypot { position:absolute; left:-9999px; opacity:0; pointer-events:none; height:0; overflow:hidden; }
+    .success-card { display:none; }
+    .success-card.show { display:block; }
+    .success-icon { font-size:42px; margin-bottom:8px; }
+    .success-title { margin:0 0 8px; font-size:24px; letter-spacing:-.03em; }
+
     @media (max-width: 560px) {
       body { padding-left: 10px; padding-right: 10px; }
       h1 { font-size: 28px; }
@@ -315,7 +343,12 @@
       <div class="mini-note" id="visitInfo">Переход будет сохранён для статистики рекламы.</div>
     </section>
 
-    <section class="card">
+    <section class="quiz-progress" id="quizProgress">
+      <div class="quiz-progress-top"><span id="quizStepText">Шаг 1 из 5</span><span id="quizStepTitle">Тип объекта</span></div>
+      <div class="quiz-bar"><div class="quiz-bar-fill" id="quizBarFill"></div></div>
+    </section>
+
+    <section class="card quiz-step active" data-step="1" data-title="Тип объекта">
       <h2 class="section-title">1. Тип объекта <small>выберите один</small></h2>
       <div class="choice-grid" id="objectChoices">
         <button class="choice active" type="button" data-value="Беседка" data-factor="1"><span class="emoji">🏡</span><b>Беседка</b><span>частный дом / дача</span></button>
@@ -329,7 +362,7 @@
       <input id="objectFactor" type="hidden" value="1" />
     </section>
 
-    <section class="card">
+    <section class="card quiz-step" data-step="2" data-title="Контакты">
       <h2 class="section-title">2. Контакты</h2>
       <div class="grid-2">
         <div>
@@ -351,9 +384,13 @@
         <option>На выходных</option>
         <option>Согласовать по телефону</option>
       </select>
+      <div class="honeypot" aria-hidden="true">
+        <label for="website">Сайт</label>
+        <input id="website" tabindex="-1" autocomplete="off" />
+      </div>
     </section>
 
-    <section class="card">
+    <section class="card quiz-step" data-step="3" data-title="Размеры и опции">
       <h2 class="section-title">3. Размеры проёмов <small>примерно</small></h2>
       <div id="windows"></div>
       <button class="secondary" id="addWindowBtn" type="button">+ Добавить проём</button>
@@ -378,7 +415,7 @@
         </div>
         <div class="metric">
           <div class="label">Предварительно</div>
-          <div class="value"><span id="total">0</span> ₽</div>
+          <div class="value"><span id="total">0 ₽</span></div>
         </div>
       </div>
       <div class="breakdown" id="breakdown">Добавьте размеры, чтобы увидеть расчёт.</div>
@@ -386,7 +423,7 @@
       <div class="mini-note">Это предварительный расчёт. Точная цена зависит от крепления, окантовки, молний, сложности доступа и замера.</div>
     </section>
 
-    <section class="card">
+    <section class="card quiz-step" data-step="4" data-title="Фото">
       <h2 class="section-title">4. Фото замера <small>необязательно</small></h2>
       <div class="photo-box">
         <label class="photo-btn" for="photoInput">📷 Загрузить фото проёма</label>
@@ -400,7 +437,7 @@
       </div>
     </section>
 
-    <section class="card">
+    <section class="card quiz-step" data-step="5" data-title="Комментарий и отправка">
       <h2 class="section-title">5. Комментарий</h2>
       <textarea id="comment" placeholder="Например: есть уклон крыши, нужна дверь на молнии, крепить к дереву, старые скобы уже стоят"></textarea>
       <div class="link-row">
@@ -409,7 +446,21 @@
       </div>
     </section>
 
+    <section class="card success-card" id="successCard">
+      <div class="success-icon">✅</div>
+      <h2 class="success-title">Заявка принята</h2>
+      <p class="mini-note">Мы получили ваши размеры. Обычно отвечаем в течение 10–30 минут. Для точного расчёта можно подготовить фото проёма, примерные размеры и адрес объекта.</p>
+      <div class="link-row">
+        <a class="link-btn" href="https://wa.me/79039812452" id="successWaLink">Написать в WhatsApp</a>
+        <a class="link-btn" href="https://t.me/Anvar_company" id="successTgLink">Написать в Telegram</a>
+      </div>
+    </section>
+
     <section class="actions">
+      <div class="quiz-nav">
+        <button class="secondary" id="prevStepBtn" type="button">Назад</button>
+        <button class="secondary" id="nextStepBtn" type="button">Далее</button>
+      </div>
       <label class="soft-ad-consent">
         <input id="adConsent" type="checkbox" />
         <span>Хочу получать акции и скидки по мягким окнам</span>
@@ -445,7 +496,9 @@
       attribution: {},
       visitorId: '',
       visitId: '',
-      visitSaved: false
+      visitSaved: false,
+      currentStep: 1,
+      maxStep: 5
     };
 
     const $ = (id) => document.getElementById(id);
@@ -460,6 +513,40 @@
       return String(value || '').replace(/[&<>"']/g, (ch) => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
       }[ch]));
+    }
+
+    function showStep(step) {
+      state.currentStep = Math.max(1, Math.min(state.maxStep, Number(step) || 1));
+      document.querySelectorAll('.quiz-step').forEach((card) => {
+        card.classList.toggle('active', Number(card.dataset.step) === state.currentStep);
+      });
+      const active = document.querySelector(`.quiz-step[data-step="${state.currentStep}"]`);
+      const title = active?.dataset.title || '';
+      const stepText = $('quizStepText');
+      const stepTitle = $('quizStepTitle');
+      const fill = $('quizBarFill');
+      if (stepText) stepText.textContent = `Шаг ${state.currentStep} из ${state.maxStep}`;
+      if (stepTitle) stepTitle.textContent = title;
+      if (fill) fill.style.width = `${(state.currentStep / state.maxStep) * 100}%`;
+      if ($('prevStepBtn')) $('prevStepBtn').disabled = state.currentStep === 1;
+      if ($('nextStepBtn')) $('nextStepBtn').style.display = state.currentStep === state.maxStep ? 'none' : '';
+      if ($('submitBtn')) $('submitBtn').style.display = state.currentStep === state.maxStep ? '' : 'none';
+      window.scrollTo({ top: Math.max(0, ($('quizProgress')?.offsetTop || 0) - 8), behavior: 'smooth' });
+    }
+
+    function nextStep() {
+      if (state.currentStep === 2 && !$('name').value.trim() && !$('phone').value.trim()) {
+        status('Можно продолжить, но для заявки в конце понадобится имя или телефон.', 'info');
+      }
+      if (state.currentStep === 3 && !getWindows().length) {
+        status('Добавьте хотя бы один размер проёма, чтобы продолжить.', 'bad');
+        return;
+      }
+      showStep(state.currentStep + 1);
+    }
+
+    function prevStep() {
+      showStep(state.currentStep - 1);
     }
 
     function getAttribution() {
@@ -708,11 +795,13 @@
       const subtotal = base + install + zippers;
       const total = area > 0 ? Math.max(CONFIG.minOrder, Math.round(subtotal)) : 0;
 
+      const low = total > 0 ? Math.round(total * 0.92 / 100) * 100 : 0;
+      const high = total > 0 ? Math.round(total * 1.18 / 100) * 100 : 0;
       $('area').textContent = area.toFixed(2);
-      $('total').textContent = money(total);
+      $('total').textContent = total > 0 ? `от ${money(low)} до ${money(high)} ₽` : '0 ₽';
       $('breakdown').innerHTML = area > 0
-        ? 'Предварительная сумма рассчитана по вашим размерам. Точную стоимость подтвердим после уточнения крепления и замера.'
-        : 'Добавьте размеры, чтобы увидеть расчёт.';
+        ? 'Показан предварительный диапазон. Точную стоимость подтвердим после уточнения крепления, сложности проёма и замера.'
+        : 'Добавьте размеры, чтобы увидеть предварительный диапазон.';
 
       return {
         windows,
@@ -865,6 +954,10 @@
             estimate,
             photoDataUrl: state.photoDataUrl,
             photoInfo: state.photoInfo,
+            antiSpam: {
+              website: $('website')?.value || '',
+              startedAt: state.visitId
+            },
             consent: {
               privacyConsent: true,
               adConsent: $('adConsent')?.checked || false,
@@ -880,6 +973,13 @@
         reachGoal('miniapp_lead', { campaign: state.attribution.utm_campaign || '', content: state.attribution.utm_content || '' });
         trackVisit('lead_submit');
         status('Заявка отправлена. Мы свяжемся с вами и согласуем замер.', 'good');
+        $('successCard')?.classList.add('show');
+        document.querySelectorAll('.quiz-step').forEach((card) => card.style.display = 'none');
+        if ($('quizProgress')) $('quizProgress').style.display = 'none';
+        if ($('nextStepBtn')) $('nextStepBtn').style.display = 'none';
+        if ($('prevStepBtn')) $('prevStepBtn').style.display = 'none';
+        if ($('submitBtn')) $('submitBtn').style.display = 'none';
+        window.scrollTo({ top: $('successCard')?.offsetTop || 0, behavior: 'smooth' });
         if (state.webApp?.disableClosingConfirmation) state.webApp.disableClosingConfirmation();
       } catch (error) {
         status(`Ошибка отправки: ${error.message}`, 'bad');
@@ -920,11 +1020,16 @@
     $('addWindowBtn').addEventListener('click', () => addWindow());
     $('requestContactBtn').addEventListener('click', requestContact);
     $('submitBtn').addEventListener('click', submitLead);
+    $('nextStepBtn')?.addEventListener('click', nextStep);
+    $('prevStepBtn')?.addEventListener('click', prevStep);
     $('photoInput').addEventListener('change', handlePhotoChange);
     $('removePhotoBtn').addEventListener('click', removePhoto);
     $('waLink').addEventListener('click', (e) => { e.preventDefault(); safeOpenLink(e.currentTarget.href); });
     $('tgLink').addEventListener('click', (e) => { e.preventDefault(); safeOpenLink(e.currentTarget.href); });
+    $('successWaLink')?.addEventListener('click', (e) => { e.preventDefault(); safeOpenLink(e.currentTarget.href); });
+    $('successTgLink')?.addEventListener('click', (e) => { e.preventDefault(); safeOpenLink(e.currentTarget.href); });
 
+    showStep(1);
     addWindow({ widthCm: 250, heightCm: 180, count: 1 });
     initVisitorIds();
     initMax();

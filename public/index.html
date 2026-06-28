@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MAX Admin v27</title>
+  <title>MAX Admin v28</title>
   <style>
     :root {
       --bg: #09111f;
@@ -871,6 +871,125 @@
       text-align: center;
     }
 
+
+    .calendar-days {
+      display: grid;
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .calendar-day {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: rgba(255,255,255,.7);
+      overflow: hidden;
+    }
+
+    .calendar-day-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      background: linear-gradient(135deg, rgba(37,99,235,.08), rgba(124,58,237,.07));
+      font-weight: 900;
+    }
+
+    .calendar-post {
+      padding: 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .calendar-post-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .calendar-post-actions button {
+      width: auto;
+      padding: 9px 12px;
+      font-size: 13px;
+      border-radius: 12px;
+    }
+
+    .report-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .report-card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(255,255,255,.86);
+    }
+
+    .report-card strong {
+      display: block;
+      font-size: 24px;
+      margin-bottom: 5px;
+      letter-spacing: -.03em;
+    }
+
+    .rating-table {
+      display: grid;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .rating-row {
+      display: grid;
+      grid-template-columns: 1.5fr .7fr .7fr .7fr .7fr 1fr;
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255,255,255,.86);
+      font-size: 13px;
+    }
+
+    .rating-row.header {
+      font-weight: 900;
+      color: #344054;
+      background: rgba(248,250,252,.95);
+    }
+
+    .template-editor {
+      display: grid;
+      grid-template-columns: .6fr 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .template-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .template-item {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255,255,255,.86);
+    }
+
+    .export-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 900px) {
+      .report-grid, .template-editor, .export-grid { grid-template-columns: 1fr; }
+      .rating-row { grid-template-columns: 1fr 1fr; }
+      .rating-row.header { display: none; }
+    }
+
     @media (max-width: 980px) {
       .side-nav { display: none; }
       .hero-grid,
@@ -919,7 +1038,7 @@
     <section class="hero">
       <div class="hero-grid">
         <div>
-          <div class="hero-badge">MAX Admin · v27</div>
+          <div class="hero-badge">MAX Admin · v28</div>
           <h1 class="hero-title">Удобная панель управления рассылками, заявками и mini app MAX</h1>
           <p class="hero-text">Добавил боковое меню, быстрый дашборд, сворачиваемые разделы и более удобную структуру для ежедневной работы с постами, группами, заявками и аудиториями.</p>
           <div class="hero-meta">
@@ -933,7 +1052,7 @@
           <div class="hero-stat"><strong>1</strong><span>Единая админка для постов, групп, шаблонов и статусов.</span></div>
           <div class="hero-stat"><strong>MAX</strong><span>Бот, Webhook и mini app работают в одной системе.</span></div>
           <div class="hero-stat"><strong>CRM</strong><span>Заявки, аудитории и источники переходов хранятся в Supabase.</span></div>
-          <div class="hero-stat"><strong>v27</strong><span>CRM-доска заявок, статусы и быстрые действия.</span></div>
+          <div class="hero-stat"><strong>v28</strong><span>Пакет роста: календарь, шаблоны, рейтинг групп, квиз и экспорты.</span></div>
         </div>
       </div>
       <div class="section-nav">
@@ -941,7 +1060,9 @@
         <a class="nav-chip" href="#miniappSection">Mini App</a>
         <a class="nav-chip" href="#pricesSection">Цены</a>
         <a class="nav-chip" href="#groupsSection">Группы</a>
+        <a class="nav-chip" href="#groupRatingSection">Рейтинг групп</a>
         <a class="nav-chip" href="#composerSection">Пост</a>
+        <a class="nav-chip" href="#templateLibrarySection">Шаблоны</a>
         <a class="nav-chip" href="#scheduleSection">Расписание</a>
         <a class="nav-chip" href="#leadsSection">Заявки</a>
         <a class="nav-chip" href="#audienceSection">Аудитория</a>
@@ -953,9 +1074,9 @@
       <div id="topStatusDot" class="top-status-dot"></div>
       <div>
         <div id="topStatusTitle" class="top-status-title">Статус: готово</div>
-        <div id="topStatusMessage" class="top-status-message">Готово к работе. v27: CRM-доска заявок, статусы и быстрые действия.</div>
+        <div id="topStatusMessage" class="top-status-message">Готово к работе. v28: рост, календарь, шаблоны, рейтинг групп, квиз, антиспам и экспорты.</div>
       </div>
-      <div class="version-badge">v27</div>
+      <div class="version-badge">v28</div>
       <div id="topStatusTime" class="top-status-time">—</div>
     </div>
 
@@ -966,7 +1087,9 @@
       <a href="#pricesSection">Цены <span>→</span></a>
       <a href="#webhookSection">Webhook <span>→</span></a>
       <a href="#groupsSection">Группы <span>→</span></a>
+      <a href="#groupRatingSection">Рейтинг групп <span>→</span></a>
       <a href="#composerSection">Пост <span>→</span></a>
+      <a href="#templateLibrarySection">Шаблоны <span>→</span></a>
       <a href="#scheduleSection">Расписание <span>→</span></a>
       <a href="#leadsSection">Заявки <span>→</span></a>
       <a href="#audienceSection">Аудитория <span>→</span></a>
@@ -1063,6 +1186,16 @@
       <p class="sub" style="margin-top:10px">Если Supabase не подключён, список групп берётся из переменной MAX_GROUPS, а добавление групп из админки недоступно.</p>
     </section>
 
+    <section id="groupRatingSection" class="card">
+      <div class="card-head"><div><div class="card-kicker">Аналитика групп</div><h2>Рейтинг групп MAX</h2><p class="sub">Показывает, какие группы дают переходы, заявки и предварительную сумму. Так можно отключать слабые группы и усиливать работающие.</p></div><button class="secondary" id="loadGroupRatingBtn" type="button" style="max-width:240px">Обновить рейтинг</button></div>
+      <div id="groupRatingSummary" class="report-grid">
+        <div class="report-card"><strong>—</strong><span class="muted">Переходов</span></div>
+        <div class="report-card"><strong>—</strong><span class="muted">Заявок</span></div>
+        <div class="report-card"><strong>—</strong><span class="muted">Постов</span></div>
+      </div>
+      <div id="groupRating" class="rating-table muted">Введите пароль и нажмите “Обновить рейтинг”.</div>
+    </section>
+
     <section id="composerSection" class="card">
       <div class="card-head"><div><div class="card-kicker">Контент</div><h2>Редактор рекламного поста</h2><p class="sub">Текст объявления, шаблоны и подготовка сообщения для отправки или расписания.</p></div></div>
       <label class="title" for="text">Текст поста</label>
@@ -1079,6 +1212,19 @@
         <button class="secondary" type="button" data-template="eva">Шаблон: EVA коврики</button>
         <button class="secondary" type="button" data-template="promo">Шаблон: акция</button>
       </div>
+    </section>
+
+    <section id="templateLibrarySection" class="card">
+      <div class="card-head"><div><div class="card-kicker">Библиотека постов</div><h2>Шаблоны рекламных постов</h2><p class="sub">Сохраняй удачные тексты и используй их повторно для беседок, веранд, кафе, акций и СНТ.</p></div><button class="secondary" id="refreshTemplateLibraryBtn" type="button" style="max-width:240px">Обновить шаблоны</button></div>
+      <div class="template-editor">
+        <input id="templateKeyInput" placeholder="key: besedki_dozhd" />
+        <input id="templateTitleInput" placeholder="Название шаблона: Беседки / дождь" />
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="secondary" id="saveCurrentTemplateBtn" type="button">Сохранить текущий текст как шаблон</button>
+        <button class="secondary" id="applyTemplateToUtmBtn" type="button">Подставить UTM из названия</button>
+      </div>
+      <div id="templateLibrary" class="template-list muted">Шаблоны ещё не загружены.</div>
     </section>
 
     <section id="imageSection" class="card">
@@ -1193,6 +1339,11 @@
       <div class="row" style="margin-top:12px">
         <button class="secondary" id="exportYandexPhonesBtn" type="button">Скачать CSV телефонов</button>
         <button class="secondary" id="exportYandexHashBtn" type="button">Скачать CSV SHA-256</button>
+      </div>
+      <div class="export-grid">
+        <button class="secondary" id="exportLeadsBtn" type="button">Экспорт заявок CSV</button>
+        <button class="secondary" id="exportCampaignsBtn" type="button">Экспорт кампаний CSV</button>
+        <button class="secondary" id="exportGroupsBtn" type="button">Экспорт групп CSV</button>
       </div>
       <p class="sub" style="margin-top:10px">Все открытия /miniapp сохраняются в max_miniapp_visits. Для Яндекс Аудиторий выгружаются только контакты с телефоном и согласием на рекламу. Для ретаргетинга всех посетителей добавь в Vercel переменную YANDEX_METRIKA_COUNTER_ID и создай цели miniapp_open / miniapp_lead.</p>
     </section>
@@ -1558,9 +1709,11 @@
         const data = await apiFetch('/api/templates');
         loadedTemplates = Array.isArray(data.templates) && data.templates.length ? data.templates : fallbackTemplates;
         renderTemplateButtons();
+        renderTemplateLibrary();
       } catch {
         loadedTemplates = fallbackTemplates;
         renderTemplateButtons();
+        renderTemplateLibrary();
       }
     }
 
@@ -1578,6 +1731,151 @@
         });
       });
     }
+
+
+
+    function renderTemplateLibrary() {
+      const box = el('templateLibrary');
+      if (!box) return;
+      if (!loadedTemplates.length) {
+        box.className = 'template-list muted';
+        box.textContent = 'Шаблоны не найдены.';
+        return;
+      }
+      box.className = 'template-list';
+      box.innerHTML = loadedTemplates.map((tpl) => `
+        <div class="template-item">
+          <strong>${escapeHtml(tpl.title || tpl.key)}</strong> <span class="pill">${escapeHtml(tpl.key || '')}</span>
+          <p>${escapeHtml(tpl.text || '').slice(0, 260)}</p>
+          <div class="row">
+            <button class="secondary use-template" type="button" data-key="${escapeHtml(tpl.key)}">Вставить в пост</button>
+            <button class="secondary use-template-utm" type="button" data-key="${escapeHtml(tpl.key)}">Вставить + UTM</button>
+          </div>
+        </div>
+      `).join('');
+      box.querySelectorAll('.use-template').forEach((button) => {
+        button.addEventListener('click', () => applyTemplateByKey(button.dataset.key, false));
+      });
+      box.querySelectorAll('.use-template-utm').forEach((button) => {
+        button.addEventListener('click', () => applyTemplateByKey(button.dataset.key, true));
+      });
+    }
+
+    function applyTemplateByKey(key, withUtm = false) {
+      const tpl = loadedTemplates.find((item) => item.key === key);
+      if (!tpl) return;
+      el('text').value = tpl.text || '';
+      if (withUtm) {
+        if (el('utmCampaign')) el('utmCampaign').value = tpl.key || 'post_template';
+        if (el('utmContent')) el('utmContent').value = `template_${tpl.key || 'post'}`;
+        updateMiniappButtonPreview();
+      }
+      setStatus(`Шаблон “${tpl.title || tpl.key}” вставлен в пост.`, 'ok');
+    }
+
+    async function refreshTemplateLibrary() {
+      if (!getPassword()) return setStatus('Введите пароль админки.', 'err');
+      await loadTemplates();
+      renderTemplateLibrary();
+      setStatus('Библиотека шаблонов обновлена.', 'ok');
+    }
+
+    async function saveCurrentTemplate() {
+      try {
+        if (!getPassword()) return setStatus('Введите пароль админки.', 'err');
+        const rawTitle = el('templateTitleInput')?.value.trim() || 'Новый шаблон';
+        const rawKey = el('templateKeyInput')?.value.trim() || rawTitle;
+        const key = slugPart(rawKey, 'template').toLowerCase().replace(/[^a-z0-9_-]/g, '_').slice(0, 40);
+        const text = el('text')?.value.trim() || '';
+        if (text.length < 3) return setStatus('Введите текст поста, чтобы сохранить шаблон.', 'err');
+        const data = await apiFetch('/api/templates', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key, title: rawTitle, text, active: true })
+        });
+        await loadTemplates();
+        renderTemplateLibrary();
+        setStatus('Шаблон сохранён:\n' + JSON.stringify(data.template || data, null, 2), 'ok');
+      } catch (error) {
+        setStatus('Ошибка сохранения шаблона:\n' + error.message, 'err');
+      }
+    }
+
+    function applyTemplateTitleToUtm() {
+      const raw = el('templateKeyInput')?.value || el('templateTitleInput')?.value || 'post_template';
+      if (el('utmCampaign')) el('utmCampaign').value = slugPart(raw, 'post_template').toLowerCase();
+      if (el('utmContent')) el('utmContent').value = `post_${new Date().toISOString().slice(0,10)}`;
+      updateMiniappButtonPreview();
+      setStatus('UTM-метки подставлены из названия шаблона.', 'ok');
+    }
+
+    async function loadGroupRating() {
+      const box = el('groupRating');
+      const summary = el('groupRatingSummary');
+      if (!box) return;
+      if (!getPassword()) {
+        box.className = 'rating-table muted';
+        box.textContent = 'Введите пароль, чтобы загрузить рейтинг групп.';
+        return;
+      }
+      try {
+        setStatus('Загружаю рейтинг групп...');
+        const data = await apiFetch('/api/group-rating');
+        const groups = Array.isArray(data.groups) ? data.groups : [];
+        const totals = data.summary || {};
+        if (summary) {
+          summary.innerHTML = `
+            <div class="report-card"><strong>${Number(totals.visits || 0).toLocaleString('ru-RU')}</strong><span class="muted">Переходов</span></div>
+            <div class="report-card"><strong>${Number(totals.leads || 0).toLocaleString('ru-RU')}</strong><span class="muted">Заявок</span></div>
+            <div class="report-card"><strong>${Number(totals.posts || 0).toLocaleString('ru-RU')}</strong><span class="muted">Постов</span></div>
+          `;
+        }
+        if (!groups.length) {
+          box.className = 'rating-table muted';
+          box.textContent = 'Данных по группам пока нет.';
+          return;
+        }
+        box.className = 'rating-table';
+        box.innerHTML = `
+          <div class="rating-row header"><div>Группа</div><div>Посты</div><div>Переходы</div><div>Заявки</div><div>Конверсия</div><div>Ошибки</div></div>
+          ${groups.map((g) => `
+            <div class="rating-row">
+              <div><strong>${escapeHtml(g.name || '—')}</strong><br><span class="muted">${escapeHtml(g.chat_id || '')}</span></div>
+              <div>${Number(g.posts || 0)}</div>
+              <div>${Number(g.visits || 0)}</div>
+              <div>${Number(g.leads || 0)}</div>
+              <div>${Number(g.conversion || 0)}%</div>
+              <div class="muted">${g.last_error ? escapeHtml(g.last_error).slice(0, 120) : '—'}</div>
+            </div>
+          `).join('')}
+        `;
+        setStatus(`Рейтинг групп загружен. Групп: ${groups.length}.`, 'ok');
+      } catch (error) {
+        box.className = 'rating-table muted';
+        box.textContent = 'Ошибка загрузки рейтинга групп.';
+        setStatus('Ошибка рейтинга групп:\n' + error.message, 'err');
+      }
+    }
+
+    function downloadReport(type) {
+      if (!getPassword()) return setStatus('Введите пароль админки.', 'err');
+      const url = `/api/export-reports?type=${encodeURIComponent(type)}`;
+      fetch(url, { headers: { 'x-admin-password': getPassword() } })
+        .then(async (response) => {
+          const blob = await response.blob();
+          if (!response.ok) throw new Error(await blob.text() || `Ошибка ${response.status}`);
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = `max-${type}-${new Date().toISOString().slice(0,10)}.csv`;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          setTimeout(() => URL.revokeObjectURL(link.href), 2000);
+          setStatus(`CSV-отчёт скачан: ${type}.`, 'ok');
+        })
+        .catch((error) => setStatus('Ошибка экспорта отчёта:\n' + error.message, 'err'));
+    }
+
 
     function fileToDataUrl(file) {
       return new Promise((resolve, reject) => {
@@ -1716,6 +2014,35 @@
       return Array.isArray(data.scheduled) ? data.scheduled : [];
     }
 
+    function dayLabel(dateValue) {
+      const date = dateValue ? new Date(dateValue) : null;
+      if (!date || !Number.isFinite(date.getTime())) return 'Без даты';
+      const today = new Date();
+      const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+      if (sameDay(date, today)) return 'Сегодня';
+      if (sameDay(date, tomorrow)) return 'Завтра';
+      return date.toLocaleDateString('ru-RU', { weekday: 'long', day: '2-digit', month: 'long' });
+    }
+
+    function duplicateScheduledToComposer(item) {
+      if (!item) return;
+      el('text').value = item.post_text || '';
+      const date = new Date(Date.now() + 60 * 60 * 1000);
+      date.setSeconds(0, 0);
+      const pad = (n) => String(n).padStart(2, '0');
+      el('scheduledAt').value = `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+      if (Array.isArray(item.buttons)) {
+        const mini = item.buttons.find((b) => String(b.url || '').includes('/miniapp'));
+        if (mini) {
+          el('addMiniappButton').checked = true;
+          el('miniappButtonText').value = mini.text || 'Рассчитать стоимость';
+        }
+      }
+      setStatus('Пост скопирован в редактор. Выберите новое время и нажмите “Запланировать пост”.', 'ok');
+      location.hash = '#composerSection';
+    }
+
     async function renderScheduledPosts() {
       const box = el('scheduledList');
       if (!box) return;
@@ -1727,33 +2054,53 @@
 
       try {
         const items = await readScheduledPosts();
+        window.__scheduledPostsCache = items;
         if (!items.length) {
           box.className = 'scheduled-list muted';
           box.textContent = 'Запланированных постов пока нет.';
           return;
         }
 
-        box.className = 'scheduled-list';
-        box.innerHTML = items.map((item) => {
-          const date = item.scheduled_at ? new Date(item.scheduled_at).toLocaleString('ru-RU') : 'без даты';
-          const groups = Array.isArray(item.group_names) && item.group_names.length
-            ? item.group_names.join(', ')
-            : (Array.isArray(item.chat_ids) ? item.chat_ids.join(', ') : '');
-          const canCancel = item.status === 'scheduled';
-          return `
-            <div class="scheduled-item">
-              <strong>${escapeHtml(date)} <span class="pill">${escapeHtml(item.status || '')}</span> <span class="pill">${item.has_image ? 'с фото' : 'без фото'}</span></strong>
-              <div class="muted">Группы: ${escapeHtml(groups)}</div>
-              <div class="muted">Попыток: ${Number(item.attempt_count || 0)}${item.last_error ? ' · Ошибка: ' + escapeHtml(item.last_error) : ''}</div>
-              <p>${escapeHtml(item.post_text || '').slice(0, 400)}</p>
-              ${canCancel ? `<button class="danger cancel-scheduled" data-id="${escapeHtml(item.id)}" type="button" style="width:auto;margin-top:10px">Отменить</button>` : ''}
-            </div>
-          `;
-        }).join('');
+        const grouped = new Map();
+        for (const item of items) {
+          const key = dayLabel(item.scheduled_at);
+          if (!grouped.has(key)) grouped.set(key, []);
+          grouped.get(key).push(item);
+        }
+
+        box.className = 'calendar-days';
+        box.innerHTML = Array.from(grouped.entries()).map(([day, dayItems]) => `
+          <div class="calendar-day">
+            <div class="calendar-day-title"><span>${escapeHtml(day)}</span><span>${dayItems.length} пост.</span></div>
+            ${dayItems.map((item) => {
+              const date = item.scheduled_at ? new Date(item.scheduled_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '—';
+              const groups = Array.isArray(item.group_names) && item.group_names.length
+                ? item.group_names.join(', ')
+                : (Array.isArray(item.chat_ids) ? item.chat_ids.join(', ') : '');
+              const canCancel = item.status === 'scheduled';
+              return `
+                <div class="calendar-post">
+                  <strong>${escapeHtml(date)} <span class="pill">${escapeHtml(item.status || '')}</span> <span class="pill">${item.has_image ? 'с фото' : 'без фото'}</span></strong>
+                  <div class="muted">Группы: ${escapeHtml(groups)}</div>
+                  <div class="muted">Попыток: ${Number(item.attempt_count || 0)}${item.last_error ? ' · Ошибка: ' + escapeHtml(item.last_error) : ''}</div>
+                  <p>${escapeHtml(item.post_text || '').slice(0, 420)}</p>
+                  <div class="calendar-post-actions">
+                    <button class="secondary duplicate-scheduled" data-id="${escapeHtml(item.id)}" type="button">Дублировать</button>
+                    ${canCancel ? `<button class="danger cancel-scheduled" data-id="${escapeHtml(item.id)}" type="button">Отменить</button>` : ''}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `).join('');
 
         box.querySelectorAll('.cancel-scheduled').forEach((button) => {
-          button.addEventListener('click', async () => {
-            await cancelScheduledPost(button.dataset.id);
+          button.addEventListener('click', async () => cancelScheduledPost(button.dataset.id));
+        });
+        box.querySelectorAll('.duplicate-scheduled').forEach((button) => {
+          button.addEventListener('click', () => {
+            const item = (window.__scheduledPostsCache || []).find((x) => String(x.id) === String(button.dataset.id));
+            duplicateScheduledToComposer(item);
           });
         });
       } catch (error) {
@@ -2162,6 +2509,8 @@
       await loadMiniappLeads();
       await loadLeadStats();
       await loadAudienceStats();
+      await loadGroupRating();
+      renderTemplateLibrary();
     }
 
 
@@ -2234,6 +2583,13 @@
       el(id)?.addEventListener('keydown', (event) => { if (event.key === 'Enter') loadMiniappLeads(); });
     });
     el('loadAudienceStatsBtn')?.addEventListener('click', loadAudienceStats);
+    el('loadGroupRatingBtn')?.addEventListener('click', loadGroupRating);
+    el('refreshTemplateLibraryBtn')?.addEventListener('click', refreshTemplateLibrary);
+    el('saveCurrentTemplateBtn')?.addEventListener('click', saveCurrentTemplate);
+    el('applyTemplateToUtmBtn')?.addEventListener('click', applyTemplateTitleToUtm);
+    el('exportLeadsBtn')?.addEventListener('click', () => downloadReport('leads'));
+    el('exportCampaignsBtn')?.addEventListener('click', () => downloadReport('campaigns'));
+    el('exportGroupsBtn')?.addEventListener('click', () => downloadReport('groups'));
     el('exportYandexPhonesBtn')?.addEventListener('click', () => downloadYandexAudience('plain'));
     el('exportYandexHashBtn')?.addEventListener('click', () => downloadYandexAudience('sha256'));
     ['addMiniappButton','miniappButtonText','utmCampaign','utmContent','utmMedium'].forEach((id) => {
