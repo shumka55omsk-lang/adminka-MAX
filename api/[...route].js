@@ -4,10 +4,14 @@ import diagnostics from '../lib/api/diagnostics.js';
 import groups from '../lib/api/groups.js';
 import history from '../lib/api/history.js';
 import leadStats from '../lib/api/lead-stats.js';
+import audienceStats from '../lib/api/audience-stats.js';
 import maxWebhook from '../lib/api/max-webhook.js';
 import miniappLeads from '../lib/api/miniapp-leads.js';
+import miniappVisit from '../lib/api/miniapp-visit.js';
 import miniappSubmit from '../lib/api/miniapp-submit.js';
 import priceSettings from '../lib/api/price-settings.js';
+import publicConfig from '../lib/api/public-config.js';
+import yandexAudienceExport from '../lib/api/yandex-audience-export.js';
 import schedulePost from '../lib/api/schedule-post.js';
 import scheduledPosts from '../lib/api/scheduled-posts.js';
 import sendMaxPost from '../lib/api/send-max-post.js';
@@ -16,14 +20,15 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v21-button-row-fix',
-  builtAt: '2026-06-28T03:35:00Z',
+  version: 'v23-soft-consent',
+  builtAt: '2026-06-28T04:55:00Z',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
-  reason: 'Vercel Hobby router + MAX inline keyboard row-size fix'
+  reason: 'Vercel Hobby router + soft consent + miniapp visitor tracking + Yandex audience export'
 };
 
 const routes = new Map([
+  ['audience-stats', audienceStats],
   ['check-chat', checkChat],
   ['cron-send-scheduled', cronSendScheduled],
   ['diagnostics', diagnostics],
@@ -32,13 +37,16 @@ const routes = new Map([
   ['lead-stats', leadStats],
   ['max-webhook', maxWebhook],
   ['miniapp-leads', miniappLeads],
+  ['miniapp-visit', miniappVisit],
   ['miniapp-submit', miniappSubmit],
   ['price-settings', priceSettings],
+  ['public-config', publicConfig],
   ['schedule-post', schedulePost],
   ['scheduled-posts', scheduledPosts],
   ['send-max-post', sendMaxPost],
   ['templates', templates],
-  ['webhook-subscription', webhookSubscription]
+  ['webhook-subscription', webhookSubscription],
+  ['yandex-audience-export', yandexAudienceExport]
 ]);
 
 function getRouteName(req) {

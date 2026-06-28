@@ -383,7 +383,7 @@
   <main class="wrap">
     <div class="top">
       <div>
-        <h1>Рассылка MAX <span style="font-size:14px;color:#667085">v20</span></h1>
+        <h1>Рассылка MAX <span style="font-size:14px;color:#667085">v23</span></h1>
         <p class="sub">MVP-админка: рассылка, Webhook, расписание и мини-приложение MAX для заявок.</p>
       </div>
     </div>
@@ -392,9 +392,9 @@
       <div id="topStatusDot" class="top-status-dot"></div>
       <div>
         <div id="topStatusTitle" class="top-status-title">Статус: готово</div>
-        <div id="topStatusMessage" class="top-status-message">Готово к работе. v20: рекламные посты могут вести в мини-приложение с UTM-метками.</div>
+        <div id="topStatusMessage" class="top-status-message">Готово к работе. v23: мягкое согласие в мини-приложении + статистика переходов.</div>
       </div>
-      <div class="version-badge">v20</div>
+      <div class="version-badge">v23</div>
       <div id="topStatusTime" class="top-status-time">—</div>
     </div>
 
@@ -564,6 +564,19 @@
       </div>
       <div id="leadStats" class="history-list muted">Статистика ещё не загружена.</div>
       <p class="sub" style="margin-top:10px">Заявки группируются по UTM-кампании и источнику. Так видно, какие посты дают заявки.</p>
+    </section>
+
+    <section class="card">
+      <div class="row" style="margin-bottom:12px">
+        <h2 style="flex:2">Аудитория / Яндекс Директ</h2>
+        <button class="secondary" id="loadAudienceStatsBtn" type="button">Обновить аудиторию</button>
+      </div>
+      <div id="audienceStats" class="history-list muted">Аудитория ещё не загружена.</div>
+      <div class="row" style="margin-top:12px">
+        <button class="secondary" id="exportYandexPhonesBtn" type="button">Скачать CSV телефонов</button>
+        <button class="secondary" id="exportYandexHashBtn" type="button">Скачать CSV SHA-256</button>
+      </div>
+      <p class="sub" style="margin-top:10px">Все открытия /miniapp сохраняются в max_miniapp_visits. Для Яндекс Аудиторий выгружаются только контакты с телефоном и согласием на рекламу. Для ретаргетинга всех посетителей добавь в Vercel переменную YANDEX_METRIKA_COUNTER_ID и создай цели miniapp_open / miniapp_lead.</p>
     </section>
 
     <section class="card">
@@ -1242,6 +1255,66 @@
       }
     }
 
+
+
+    async function loadAudienceStats() {
+      const box = el('audienceStats');
+      if (!box) return;
+      if (!getPassword()) {
+        box.className = 'history-list muted';
+        box.textContent = 'Введите пароль, чтобы загрузить аудиторию.';
+        return;
+      }
+      try {
+        setStatus('Загружаю аудиторию мини-приложения...');
+        const data = await apiFetch('/api/audience-stats?limit=1000');
+        const totals = data.totals || {};
+        const campaigns = Array.isArray(data.campaigns) ? data.campaigns : [];
+        box.className = 'history-list';
+        const summary = `
+          <div class="history-item">
+            <strong>Итого <span class="pill">${Number(totals.visits || 0)} переходов</span> <span class="pill">${Number(totals.unique_visitors || 0)} уникальных</span></strong>
+            <div class="muted">MAX users: ${Number(totals.max_users || 0)} · заявок: ${Number(totals.leads || 0)} · телефонов: ${Number(totals.leads_with_phone || 0)} · готово для Яндекс CSV: ${Number(totals.yandex_ready_contacts || 0)}</div>
+            ${data.visitWarning ? `<div class="muted">Предупреждение: ${escapeHtml(data.visitWarning)}</div>` : ''}
+          </div>`;
+        const campaignHtml = campaigns.slice(0, 20).map((item) => `
+          <div class="history-item">
+            <strong>${escapeHtml(item.campaign || 'без кампании')} <span class="pill">${Number(item.visits || 0)} переходов</span></strong>
+            <div class="muted">Уникальных: ${Number(item.unique_visitors || 0)} · MAX users: ${Number(item.max_users || 0)}</div>
+            <div class="muted">Источник: ${escapeHtml(item.source || '—')} · medium: ${escapeHtml(item.medium || '—')} · content: ${escapeHtml(item.content || '—')}</div>
+            <div class="muted">Последний переход: ${item.last_seen_at ? new Date(item.last_seen_at).toLocaleString('ru-RU') : '—'}</div>
+          </div>`).join('');
+        box.innerHTML = summary + (campaignHtml || '<div class="history-item muted">Переходов с UTM пока нет.</div>');
+        setStatus(`Аудитория загружена. Переходов: ${Number(totals.visits || 0)}, готово для Яндекс: ${Number(totals.yandex_ready_contacts || 0)}.`, 'ok');
+      } catch (error) {
+        box.className = 'history-list muted';
+        box.textContent = 'Не удалось загрузить аудиторию.';
+        setStatus('Ошибка загрузки аудитории:\n' + error.message, 'err');
+      }
+    }
+
+    function downloadYandexAudience(format = 'plain') {
+      if (!getPassword()) return setStatus('Введите пароль админки.', 'err');
+      const url = `/api/yandex-audience-export?format=${encodeURIComponent(format)}&require_consent=true&limit=10000`;
+      fetch(url, { headers: { 'x-admin-password': getPassword() } })
+        .then(async (response) => {
+          const blob = await response.blob();
+          if (!response.ok) {
+            const text = await blob.text();
+            throw new Error(text || `Ошибка ${response.status}`);
+          }
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = `yandex-audience-${format}-${new Date().toISOString().slice(0,10)}.csv`;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          setTimeout(() => URL.revokeObjectURL(link.href), 2000);
+          setStatus(`CSV для Яндекс Аудиторий скачан (${format}).`, 'ok');
+        })
+        .catch((error) => setStatus('Ошибка экспорта CSV:\n' + error.message, 'err'));
+    }
+
     async function clearHistory() {
       try {
         if (getPassword()) {
@@ -1293,6 +1366,7 @@
       await loadTemplates();
       await loadPriceSettings();
       await loadLeadStats();
+      await loadAudienceStats();
     }
 
     el('password').addEventListener('keydown', async (event) => {
@@ -1319,6 +1393,9 @@
     el('loadPricesBtn')?.addEventListener('click', loadPriceSettings);
     el('savePricesBtn')?.addEventListener('click', savePriceSettings);
     el('loadLeadStatsBtn')?.addEventListener('click', loadLeadStats);
+    el('loadAudienceStatsBtn')?.addEventListener('click', loadAudienceStats);
+    el('exportYandexPhonesBtn')?.addEventListener('click', () => downloadYandexAudience('plain'));
+    el('exportYandexHashBtn')?.addEventListener('click', () => downloadYandexAudience('sha256'));
     ['addMiniappButton','miniappButtonText','utmCampaign','utmContent','utmMedium'].forEach((id) => {
       el(id)?.addEventListener('input', updateMiniappButtonPreview);
       el(id)?.addEventListener('change', updateMiniappButtonPreview);

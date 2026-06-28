@@ -277,6 +277,13 @@
     .mini-note { font-size: 12px; color: var(--muted); line-height: 1.35; margin-top: 8px; }
     .link-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
     .link-btn { display: block; text-align: center; text-decoration: none; color: var(--accent2); background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 12px 10px; font-weight: 850; }
+    .consent-box { display: grid; gap: 8px; margin-top: 12px; padding: 12px; border-radius: 16px; border: 1px solid var(--border); background: rgba(255,255,255,.72); }
+    .soft-ad-consent { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; padding: 12px 14px; border-radius: 16px; background: rgba(255,255,255,.76); border: 1px solid var(--border); color: var(--muted); font-size: 14px; font-weight: 750; }
+    .soft-ad-consent input { width: 19px; height: 19px; accent-color: var(--accent2); }
+    .soft-consent-note { margin-top: 9px; color: var(--muted); font-size: 12px; line-height: 1.35; text-align: center; }
+    .check-line { display: flex; gap: 10px; align-items: flex-start; font-weight: 650; font-size: 13px; line-height: 1.35; margin: 0; }
+    .check-line input { width: auto; margin: 2px 0 0; flex: 0 0 auto; }
+    .tiny-link { color: var(--accent2); font-weight: 800; text-decoration: underline; text-underline-offset: 2px; }
 
     @media (max-width: 560px) {
       body { padding-left: 10px; padding-right: 10px; }
@@ -305,6 +312,7 @@
     <section class="card" id="trackingCard" style="display:none">
       <h2 class="section-title">Источник заявки</h2>
       <div class="mini-note" id="trackingInfo">Заявка открыта из рекламного поста.</div>
+      <div class="mini-note" id="visitInfo">Переход будет сохранён для статистики рекламы.</div>
     </section>
 
     <section class="card">
@@ -402,7 +410,15 @@
     </section>
 
     <section class="actions">
+      <label class="soft-ad-consent">
+        <input id="adConsent" type="checkbox" />
+        <span>Хочу получать акции и скидки по мягким окнам</span>
+      </label>
       <button class="primary" id="submitBtn" type="button">Заказать замер</button>
+      <div class="soft-consent-note" id="privacyConsentText">
+        Нажимая кнопку, вы соглашаетесь с обработкой данных для связи по заявке.
+        <span id="privacyLinkWrap" style="display:none"> <a class="tiny-link" id="privacyLink" href="#">Политика конфиденциальности</a></span>
+      </div>
       <div id="status" class="status"></div>
     </section>
   </main>
@@ -415,7 +431,10 @@
       minOrder: 5000,
       priceSource: 'default',
       maxPhotoBytes: 1300 * 1024,
-      maxPhotoSide: 1600
+      maxPhotoSide: 1600,
+      metrikaCounterId: '',
+      privacyUrl: '',
+      consentText: 'Нажимая кнопку, вы соглашаетесь с обработкой данных для связи по заявке.'
     };
 
     const state = {
@@ -423,7 +442,10 @@
       webApp: window.WebApp || null,
       photoDataUrl: '',
       photoInfo: null,
-      attribution: {}
+      attribution: {},
+      visitorId: '',
+      visitId: '',
+      visitSaved: false
     };
 
     const $ = (id) => document.getElementById(id);
@@ -432,6 +454,12 @@
       const el = $('status');
       el.className = `status show ${type}`;
       el.textContent = text;
+    }
+
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+      }[ch]));
     }
 
     function getAttribution() {
@@ -457,6 +485,110 @@
       if (card && info && hasTracking) {
         card.style.display = '';
         info.textContent = `Источник: ${state.attribution.source || '—'} · кампания: ${state.attribution.utm_campaign || '—'} · пост: ${state.attribution.utm_content || '—'}`;
+      }
+    }
+
+
+
+    function randomId(prefix) {
+      const bytes = new Uint32Array(4);
+      if (window.crypto?.getRandomValues) window.crypto.getRandomValues(bytes);
+      const rand = Array.from(bytes).map((x) => x.toString(36)).join('');
+      return `${prefix}_${Date.now().toString(36)}_${rand || Math.random().toString(36).slice(2)}`;
+    }
+
+    function initVisitorIds() {
+      let visitorId = localStorage.getItem('max_miniapp_visitor_id');
+      if (!visitorId) {
+        visitorId = randomId('v');
+        localStorage.setItem('max_miniapp_visitor_id', visitorId);
+      }
+      let visitId = sessionStorage.getItem('max_miniapp_visit_id');
+      if (!visitId) {
+        visitId = randomId('visit');
+        sessionStorage.setItem('max_miniapp_visit_id', visitId);
+      }
+      state.visitorId = visitorId;
+      state.visitId = visitId;
+    }
+
+    async function loadPublicConfig() {
+      try {
+        const response = await fetch('/api/public-config');
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.ok) return;
+        CONFIG.metrikaCounterId = data.yandexMetrikaCounterId || '';
+        CONFIG.privacyUrl = data.privacyUrl || '';
+        CONFIG.consentText = data.consentText || CONFIG.consentText;
+        const consentText = $('privacyConsentText');
+        if (consentText) {
+          const wrapHtml = CONFIG.privacyUrl ? ' <span id="privacyLinkWrap"><a class="tiny-link" id="privacyLink" href="#">Политика конфиденциальности</a></span>' : '';
+          consentText.innerHTML = `${escapeHtml(CONFIG.consentText)}${wrapHtml}`;
+        }
+        if (CONFIG.privacyUrl) {
+          const link = $('privacyLink');
+          if (link) {
+            link.href = CONFIG.privacyUrl;
+            link.addEventListener('click', (e) => { e.preventDefault(); safeOpenLink(CONFIG.privacyUrl); });
+          }
+        }
+        setupYandexMetrika();
+      } catch (error) {
+        console.warn('Public config warning', error);
+      }
+    }
+
+    function setupYandexMetrika() {
+      const id = String(CONFIG.metrikaCounterId || '').trim();
+      if (!/^\d+$/.test(id) || window[`yaCounterLoaded_${id}`]) return;
+      window[`yaCounterLoaded_${id}`] = true;
+      (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a);
+      })(window, document, 'script', 'https://mc.yandex.ru/metrika/tag.js', 'ym');
+      window.ym(Number(id), 'init', { clickmap: true, trackLinks: true, accurateTrackBounce: true, webvisor: false });
+      window.ym(Number(id), 'hit', window.location.href);
+      window.ym(Number(id), 'reachGoal', 'miniapp_open');
+    }
+
+    function reachGoal(goal, params = {}) {
+      const id = String(CONFIG.metrikaCounterId || '').trim();
+      if (/^\d+$/.test(id) && typeof window.ym === 'function') {
+        try { window.ym(Number(id), 'reachGoal', goal, params); } catch (e) { console.warn('Metrika goal warning', e); }
+      }
+    }
+
+    async function trackVisit(eventType = 'miniapp_open') {
+      try {
+        const payload = {
+          eventType,
+          visitorId: state.visitorId,
+          visitId: state.visitId,
+          attribution: state.attribution,
+          initData: state.webApp?.initData || '',
+          initDataUnsafe: getInitDataUnsafe(),
+          landingUrl: window.location.href,
+          referrer: document.referrer || '',
+          adConsent: $('adConsent')?.checked || false,
+          device: {
+            width: window.innerWidth,
+            height: window.innerHeight,
+            pixelRatio: window.devicePixelRatio || 1,
+            language: navigator.language || ''
+          }
+        };
+        const response = await fetch('/api/miniapp-visit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json().catch(() => ({}));
+        state.visitSaved = Boolean(response.ok && data.ok && data.saved);
+        const info = $('visitInfo');
+        if (info) info.textContent = state.visitSaved ? `Переход сохранён: ${state.visitorId}` : 'Переход не сохранён: проверьте Supabase-таблицы аудитории.';
+      } catch (error) {
+        console.warn('Visit tracking warning', error);
       }
     }
 
@@ -708,7 +840,6 @@
         status('Добавьте хотя бы один размер проёма.', 'bad');
         return;
       }
-
       $('submitBtn').disabled = true;
       status('Отправляем заявку...', 'info');
 
@@ -717,21 +848,31 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            source: state.attribution.source || 'max-miniapp-soft-windows-v20',
+            source: state.attribution.source || 'max-miniapp-soft-windows-v23',
             attribution: state.attribution,
+            visitorId: state.visitorId,
+            visitId: state.visitId,
             initData: state.webApp?.initData || '',
             initDataUnsafe: getInitDataUnsafe(),
             contact: state.contact,
             form,
             estimate,
             photoDataUrl: state.photoDataUrl,
-            photoInfo: state.photoInfo
+            photoInfo: state.photoInfo,
+            consent: {
+              privacyConsent: true,
+              adConsent: $('adConsent')?.checked || false,
+              consentText: CONFIG.consentText,
+              consentAt: new Date().toISOString()
+            }
           })
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok || !data.ok) {
           throw new Error(data.error || `Ошибка ${response.status}`);
         }
+        reachGoal('miniapp_lead', { campaign: state.attribution.utm_campaign || '', content: state.attribution.utm_content || '' });
+        trackVisit('lead_submit');
         status('Заявка отправлена. Мы свяжемся с вами и согласуем замер.', 'good');
         if (state.webApp?.disableClosingConfirmation) state.webApp.disableClosingConfirmation();
       } catch (error) {
@@ -779,9 +920,12 @@
     $('tgLink').addEventListener('click', (e) => { e.preventDefault(); safeOpenLink(e.currentTarget.href); });
 
     addWindow({ widthCm: 250, heightCm: 180, count: 1 });
+    initVisitorIds();
     initMax();
     renderAttribution();
+    loadPublicConfig();
     loadPriceSettings();
+    trackVisit('miniapp_open');
   </script>
 </body>
 </html>
