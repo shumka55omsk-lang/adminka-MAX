@@ -3,34 +3,46 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Рассылка MAX v17</title>
+  <title>MAX Admin v24</title>
   <style>
     :root {
-      --bg: #f3f5f7;
-      --card: #ffffff;
-      --text: #121417;
-      --muted: #68707d;
-      --line: #dfe3e8;
-      --accent: #101828;
+      --bg: #09111f;
+      --bg-soft: #0f172a;
+      --card: rgba(255, 255, 255, 0.92);
+      --card-strong: #ffffff;
+      --text: #101828;
+      --muted: #667085;
+      --line: rgba(15, 23, 42, 0.08);
+      --line-strong: rgba(15, 23, 42, 0.14);
+      --accent: #2563eb;
+      --accent-2: #7c3aed;
+      --accent-soft: rgba(37, 99, 235, 0.08);
       --danger: #b42318;
       --ok: #027a48;
       --soft: #f8fafc;
+      --shadow: 0 18px 40px rgba(2, 6, 23, 0.08);
+      --shadow-strong: 0 24px 60px rgba(2, 6, 23, 0.12);
+      --radius: 24px;
     }
 
     * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
       color: var(--text);
-      background: var(--bg);
-      padding-top: 86px;
+      background:
+        radial-gradient(circle at top left, rgba(59, 130, 246, 0.18), transparent 28%),
+        radial-gradient(circle at top right, rgba(124, 58, 237, 0.16), transparent 24%),
+        linear-gradient(180deg, #eef4ff 0%, #f8fbff 18%, #f3f5f7 42%, #eef2f7 100%);
+      padding-top: 96px;
+      min-height: 100vh;
     }
 
     .wrap {
-      width: min(980px, 100%);
+      width: min(1240px, 100%);
       margin: 0 auto;
-      padding: 18px;
+      padding: 22px;
     }
 
     .top {
@@ -39,6 +51,155 @@
       align-items: flex-start;
       gap: 16px;
       margin: 12px 0 18px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      margin: 8px 0 18px;
+      padding: 28px;
+      border-radius: 30px;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.96) 0%, rgba(29, 78, 216, 0.96) 55%, rgba(124, 58, 237, 0.9) 100%);
+      color: #fff;
+      box-shadow: 0 28px 70px rgba(37, 99, 235, 0.24);
+    }
+
+    .hero::before,
+    .hero::after {
+      content: '';
+      position: absolute;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      filter: blur(4px);
+    }
+
+    .hero::before {
+      width: 280px;
+      height: 280px;
+      right: -80px;
+      top: -80px;
+    }
+
+    .hero::after {
+      width: 180px;
+      height: 180px;
+      left: -40px;
+      bottom: -70px;
+    }
+
+    .hero-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(300px, 0.7fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .02em;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+
+    .hero-title {
+      margin: 0;
+      font-size: clamp(32px, 5vw, 48px);
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+      font-weight: 800;
+      max-width: 720px;
+    }
+
+    .hero-text {
+      margin: 14px 0 0;
+      color: rgba(255,255,255,.82);
+      line-height: 1.6;
+      max-width: 760px;
+      font-size: 15px;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.15);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .hero-stat {
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.16);
+      backdrop-filter: blur(8px);
+    }
+
+    .hero-stat strong {
+      display: block;
+      font-size: 26px;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .hero-stat span {
+      color: rgba(255,255,255,.78);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .section-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .nav-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.16);
+      color: #fff;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      transition: transform .18s ease, background .18s ease;
+    }
+
+    .nav-chip:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.18);
     }
 
     h1 {
@@ -55,49 +216,87 @@
     .sub {
       margin: 0;
       color: var(--muted);
-      line-height: 1.45;
+      line-height: 1.55;
+      font-size: 14px;
     }
 
     .card {
       background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 18px;
-      box-shadow: 0 10px 30px rgba(16, 24, 40, 0.06);
+      border: 1px solid rgba(255,255,255,0.72);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+      backdrop-filter: blur(12px);
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-strong);
+    }
+
+    .card[id] {
+      scroll-margin-top: 118px;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
       margin-bottom: 14px;
+    }
+
+    .card-kicker {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .02em;
+      margin-bottom: 10px;
     }
 
     .grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
     }
 
     label.title {
       display: block;
-      font-weight: 700;
-      margin-bottom: 8px;
+      font-weight: 800;
+      margin-bottom: 10px;
+      font-size: 15px;
+      letter-spacing: -0.01em;
     }
 
     input, textarea, select {
       width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 12px 13px;
-      font-size: 16px;
-      background: #fff;
+      border: 1px solid var(--line-strong);
+      border-radius: 16px;
+      padding: 14px 15px;
+      font-size: 15px;
+      background: rgba(255,255,255,0.96);
       outline: none;
+      transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
     }
 
     input:focus, textarea:focus, select:focus {
-      border-color: #98a2b3;
-      box-shadow: 0 0 0 4px rgba(152, 162, 179, 0.18);
+      border-color: rgba(37, 99, 235, .45);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+      transform: translateY(-1px);
     }
 
     textarea {
       min-height: 210px;
       resize: vertical;
-      line-height: 1.45;
+      line-height: 1.55;
     }
 
     .groups {
@@ -108,44 +307,61 @@
     .group {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 12px;
+      gap: 12px;
+      padding: 14px 15px;
       border: 1px solid var(--line);
-      border-radius: 12px;
-      background: #fff;
+      border-radius: 16px;
+      background: rgba(255,255,255,.92);
+      transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+    }
+
+    .group:hover {
+      border-color: rgba(37,99,235,.24);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(2,6,23,.05);
     }
 
     .group input { width: auto; }
 
     .row {
       display: flex;
-      gap: 10px;
+      gap: 12px;
       align-items: center;
+      flex-wrap: wrap;
     }
 
-    .row > * { flex: 1; }
+    .row > * { flex: 1; min-width: 0; }
 
     button {
       border: 0;
-      border-radius: 12px;
-      padding: 13px 14px;
-      font-size: 16px;
-      font-weight: 700;
+      border-radius: 16px;
+      padding: 14px 16px;
+      font-size: 15px;
+      font-weight: 800;
       cursor: pointer;
-      background: var(--accent);
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
       color: white;
+      box-shadow: 0 12px 22px rgba(37, 99, 235, .18);
+      transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 28px rgba(37, 99, 235, .22);
     }
 
     button.secondary {
-      background: #eef2f6;
-      color: #101828;
-      border: 1px solid var(--line);
+      background: rgba(255,255,255,.92);
+      color: #0f172a;
+      border: 1px solid var(--line-strong);
+      box-shadow: none;
     }
 
     button.danger {
       background: #fff1f0;
       color: var(--danger);
       border: 1px solid #fecdca;
+      box-shadow: none;
     }
 
     button:disabled {
@@ -157,33 +373,33 @@
       white-space: pre-wrap;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 13px;
-      line-height: 1.45;
-      padding: 12px;
-      border-radius: 12px;
+      line-height: 1.55;
+      padding: 16px;
+      border-radius: 18px;
       background: var(--soft);
       border: 1px solid var(--line);
-      min-height: 52px;
+      min-height: 56px;
       overflow-x: auto;
     }
 
     .top-status {
       position: fixed;
-      top: 10px;
+      top: 12px;
       left: 0;
       right: 0;
-      width: min(960px, calc(100% - 24px));
+      width: min(1180px, calc(100% - 24px));
       z-index: 9999;
       display: grid;
       grid-template-columns: auto 1fr auto auto;
       gap: 12px;
       align-items: center;
-      padding: 12px 14px;
+      padding: 14px 16px;
       margin: 0 auto;
-      border-radius: 16px;
-      border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.98);
-      box-shadow: 0 14px 34px rgba(16, 24, 40, 0.18);
-      backdrop-filter: blur(10px);
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.7);
+      background: rgba(255, 255, 255, 0.82);
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+      backdrop-filter: blur(14px);
     }
 
     .top-status-dot {
@@ -274,14 +490,14 @@
 
     .preview {
       display: grid;
-      grid-template-columns: 120px 1fr;
-      gap: 12px;
+      grid-template-columns: 140px 1fr;
+      gap: 16px;
       align-items: center;
-      margin-top: 10px;
-      padding: 12px;
-      background: var(--soft);
+      margin-top: 12px;
+      padding: 14px;
+      background: linear-gradient(180deg, #f8fbff 0%, #f4f8ff 100%);
       border: 1px solid var(--line);
-      border-radius: 14px;
+      border-radius: 20px;
     }
 
     .preview img {
@@ -299,10 +515,10 @@
     }
 
     .history-item {
-      padding: 12px;
+      padding: 14px;
       border: 1px solid var(--line);
-      border-radius: 12px;
-      background: #fff;
+      border-radius: 18px;
+      background: rgba(255,255,255,.95);
     }
 
     .history-item strong {
@@ -335,10 +551,10 @@
     }
 
     .scheduled-item {
-      padding: 12px;
+      padding: 14px;
       border: 1px solid var(--line);
-      border-radius: 12px;
-      background: #fff;
+      border-radius: 18px;
+      background: rgba(255,255,255,.95);
     }
 
     .scheduled-item strong {
@@ -354,19 +570,158 @@
       white-space: pre-wrap;
     }
 
+
+
+    .side-nav {
+      position: fixed;
+      top: 104px;
+      left: max(18px, calc((100vw - 1480px) / 2));
+      width: 220px;
+      z-index: 80;
+      padding: 14px;
+      border-radius: 24px;
+      background: rgba(255,255,255,.72);
+      border: 1px solid rgba(255,255,255,.74);
+      box-shadow: 0 18px 42px rgba(15,23,42,.10);
+      backdrop-filter: blur(16px);
+    }
+
+    .side-nav-title {
+      margin: 0 0 10px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .side-nav a {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 11px;
+      border-radius: 14px;
+      color: #1e293b;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 800;
+      transition: background .18s ease, color .18s ease, transform .18s ease;
+    }
+
+    .side-nav a:hover {
+      background: var(--accent-soft);
+      color: var(--accent);
+      transform: translateX(2px);
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .dash-card {
+      position: relative;
+      overflow: hidden;
+      padding: 18px;
+      border-radius: 24px;
+      background: rgba(255,255,255,.82);
+      border: 1px solid rgba(255,255,255,.78);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .dash-card::after {
+      content: '';
+      position: absolute;
+      right: -30px;
+      top: -30px;
+      width: 90px;
+      height: 90px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(37,99,235,.14), rgba(124,58,237,.12));
+    }
+
+    .dash-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      margin-bottom: 10px;
+    }
+
+    .dash-card strong {
+      display: block;
+      font-size: 26px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      margin-bottom: 8px;
+    }
+
+    .dash-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .collapse-btn {
+      max-width: 132px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .card.collapsed > :not(.card-head) {
+      display: none !important;
+    }
+
+    .card.collapsed {
+      padding-bottom: 18px;
+    }
+
+    @media (min-width: 1340px) {
+      .wrap {
+        padding-left: 250px;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .side-nav { display: none; }
+      .hero-grid,
+      .grid,
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     @media (max-width: 720px) {
-      .grid { grid-template-columns: 1fr; }
       .top { display: block; }
       .row { flex-direction: column; }
       h1 { font-size: 24px; }
       .wrap { padding: 12px; }
       .preview { grid-template-columns: 1fr; }
       .preview img { width: 100%; height: auto; max-height: 220px; }
-      body { padding-top: 104px; }
+      body { padding-top: 112px; }
+      .hero {
+        padding: 20px;
+        border-radius: 24px;
+      }
+      .hero-title {
+        font-size: 30px;
+      }
+      .hero-stats {
+        grid-template-columns: 1fr 1fr;
+      }
       .top-status {
         grid-template-columns: auto 1fr auto;
         gap: 10px;
-        border-radius: 14px;
+        border-radius: 16px;
         padding: 10px 12px;
       }
       .top-status-time {
@@ -381,24 +736,65 @@
 </head>
 <body>
   <main class="wrap">
-    <div class="top">
-      <div>
-        <h1>Рассылка MAX <span style="font-size:14px;color:#667085">v23</span></h1>
-        <p class="sub">MVP-админка: рассылка, Webhook, расписание и мини-приложение MAX для заявок.</p>
+    <section class="hero">
+      <div class="hero-grid">
+        <div>
+          <div class="hero-badge">MAX Admin · v25 UX Pro</div>
+          <h1 class="hero-title">Удобная панель управления рассылками, заявками и mini app MAX</h1>
+          <p class="hero-text">Добавил боковое меню, быстрый дашборд, сворачиваемые разделы и более удобную структуру для ежедневной работы с постами, группами, заявками и аудиториями.</p>
+          <div class="hero-meta">
+            <span class="hero-pill">Рассылка в группы</span>
+            <span class="hero-pill">Webhook и расписание</span>
+            <span class="hero-pill">Mini App и заявки</span>
+            <span class="hero-pill">Аудитории и аналитика</span>
+          </div>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat"><strong>1</strong><span>Единая админка для постов, групп, шаблонов и статусов.</span></div>
+          <div class="hero-stat"><strong>MAX</strong><span>Бот, Webhook и mini app работают в одной системе.</span></div>
+          <div class="hero-stat"><strong>CRM</strong><span>Заявки, аудитории и источники переходов хранятся в Supabase.</span></div>
+          <div class="hero-stat"><strong>v25</strong><span>Боковое меню, дашборд и сворачиваемые рабочие блоки.</span></div>
+        </div>
       </div>
-    </div>
+      <div class="section-nav">
+        <a class="nav-chip" href="#authSection">Вход</a>
+        <a class="nav-chip" href="#miniappSection">Mini App</a>
+        <a class="nav-chip" href="#pricesSection">Цены</a>
+        <a class="nav-chip" href="#groupsSection">Группы</a>
+        <a class="nav-chip" href="#composerSection">Пост</a>
+        <a class="nav-chip" href="#scheduleSection">Расписание</a>
+        <a class="nav-chip" href="#leadsSection">Заявки</a>
+        <a class="nav-chip" href="#audienceSection">Аудитория</a>
+        <a class="nav-chip" href="#historySection">История</a>
+      </div>
+    </section>
 
     <div id="topStatus" class="top-status muted" role="status" aria-live="polite">
       <div id="topStatusDot" class="top-status-dot"></div>
       <div>
         <div id="topStatusTitle" class="top-status-title">Статус: готово</div>
-        <div id="topStatusMessage" class="top-status-message">Готово к работе. v23: мягкое согласие в мини-приложении + статистика переходов.</div>
+        <div id="topStatusMessage" class="top-status-message">Готово к работе. v25: боковое меню, дашборд и сворачиваемые разделы.</div>
       </div>
-      <div class="version-badge">v23</div>
+      <div class="version-badge">v25</div>
       <div id="topStatusTime" class="top-status-time">—</div>
     </div>
 
-    <section class="card">
+    <aside class="side-nav" aria-label="Боковая навигация">
+      <p class="side-nav-title">Разделы</p>
+      <a href="#authSection">Вход <span>→</span></a>
+      <a href="#miniappSection">Mini App <span>→</span></a>
+      <a href="#pricesSection">Цены <span>→</span></a>
+      <a href="#webhookSection">Webhook <span>→</span></a>
+      <a href="#groupsSection">Группы <span>→</span></a>
+      <a href="#composerSection">Пост <span>→</span></a>
+      <a href="#scheduleSection">Расписание <span>→</span></a>
+      <a href="#leadsSection">Заявки <span>→</span></a>
+      <a href="#audienceSection">Аудитория <span>→</span></a>
+      <a href="#historySection">История <span>→</span></a>
+    </aside>
+
+    <section id="authSection" class="card">
+      <div class="card-head"><div><div class="card-kicker">Быстрый старт</div><h2>Вход и базовые действия</h2><p class="sub">Сначала войдите в админку, затем загрузите группы и проверьте доступ бота.</p></div></div>
       <div class="grid">
         <div>
           <label class="title" for="password">Пароль админки</label>
@@ -415,8 +811,9 @@
       </div>
     </section>
 
-    <section class="card">
-      <label class="title">Мини-приложение MAX</label>
+    <section id="miniappSection" class="card">
+      <div class="card-head"><div><div class="card-kicker">Mini App</div><h2>Мини-приложение MAX</h2><p class="sub">Управление ссылкой и быстрый доступ к клиентской форме расчёта.</p></div></div>
+      <label class="title">Ссылка мини-приложения</label>
       <p class="sub">Ссылка для настройки в MAX: <b id="miniappUrlText">/miniapp</b></p>
       <div class="row">
         <button class="secondary" id="openMiniappBtn" type="button">Открыть мини-приложение</button>
@@ -424,8 +821,9 @@
       </div>
     </section>
 
-    <section class="card">
-      <label class="title">Настройки цен мини-приложения</label>
+    <section id="pricesSection" class="card">
+      <div class="card-head"><div><div class="card-kicker">Цены</div><h2>Настройки цен мини-приложения</h2><p class="sub">Изменения сохраняются в Supabase и сразу используются в клиентском расчёте.</p></div></div>
+      <label class="title">Ценовые параметры</label>
       <p class="sub">Эти цены берутся из Supabase и используются в /miniapp без нового деплоя Vercel.</p>
       <div class="grid">
         <div>
@@ -454,7 +852,8 @@
       <p class="sub" id="priceSettingsInfo" style="margin-top:10px">Цены ещё не загружены.</p>
     </section>
 
-    <section class="card">
+    <section id="webhookSection" class="card">
+      <div class="card-head"><div><div class="card-kicker">Интеграция</div><h2>Webhook MAX</h2><p class="sub">Автоматическое получение chat_id, диагностика API и управление подписками.</p></div></div>
       <label class="title">Webhook MAX для автоматического получения chat_id</label>
       <p class="sub">После подключения Webhook бот будет сам сохранять группы в Supabase, когда его добавили в группу или в группе появилось событие.</p>
       <input id="webhookUrl" readonly />
@@ -467,8 +866,9 @@
     </section>
 
 
-    <section class="card">
-      <label class="title">Группы MAX</label>
+    <section id="groupsSection" class="card">
+      <div class="card-head"><div><div class="card-kicker">Группы</div><h2>Группы MAX</h2><p class="sub">Список групп для рассылок, ручное добавление и управление chat_id.</p></div></div>
+      <label class="title">Активные группы</label>
       <div id="groups" class="groups muted">Введите пароль и нажмите “Войти / загрузить группы”.</div>
 
       <div style="height:14px"></div>
@@ -483,7 +883,8 @@
       <p class="sub" style="margin-top:10px">Если Supabase не подключён, список групп берётся из переменной MAX_GROUPS, а добавление групп из админки недоступно.</p>
     </section>
 
-    <section class="card">
+    <section id="composerSection" class="card">
+      <div class="card-head"><div><div class="card-kicker">Контент</div><h2>Редактор рекламного поста</h2><p class="sub">Текст объявления, шаблоны и подготовка сообщения для отправки или расписания.</p></div></div>
       <label class="title" for="text">Текст поста</label>
       <textarea id="text">Мягкие окна в Омске
 
@@ -500,7 +901,8 @@
       </div>
     </section>
 
-    <section class="card">
+    <section id="imageSection" class="card">
+      <div class="card-head"><div><div class="card-kicker">Медиа</div><h2>Фото к посту</h2><p class="sub">Загрузите изображение, чтобы сделать пост заметнее в группах MAX.</p></div></div>
       <label class="title" for="image">Фото к посту</label>
       <input id="image" type="file" accept="image/jpeg,image/png,image/gif,image/webp" />
       <div id="imagePreview" class="preview" style="display:none">
@@ -514,7 +916,8 @@
       <p class="sub" style="margin-top:10px">Для MVP лучше загружать JPG/PNG до 6 МБ. Большие фото с телефона сначала сожмите.</p>
     </section>
 
-    <section class="card">
+    <section id="buttonsSection" class="card">
+      <div class="card-head"><div><div class="card-kicker">CTA и ссылки</div><h2>Кнопки под постом</h2><p class="sub">Настрой ссылки для WhatsApp, Telegram, сайта и кнопки расчёта стоимости.</p></div></div>
       <label class="title">Кнопки под постом</label>
       <div class="grid">
         <input id="whatsapp" placeholder="WhatsApp" value="https://wa.me/79039812452" />
@@ -539,10 +942,12 @@
     </section>
 
     <section class="card">
+      <div class="card-head"><div><div class="card-kicker">Отправка</div><h2>Публикация поста</h2><p class="sub">Когда всё готово — отправьте пост сразу в выбранные группы.</p></div></div>
       <button id="sendBtn" type="button">Отправить в MAX</button>
     </section>
 
-    <section class="card">
+    <section id="scheduleSection" class="card">
+      <div class="card-head"><div><div class="card-kicker">Автоматизация</div><h2>Расписание отправки</h2><p class="sub">Планируйте публикации заранее и запускайте очередь вручную при необходимости.</p></div></div>
       <label class="title">Расписание отправки</label>
       <p class="sub">Выбери дату и время, нажми “Запланировать”. Отправка произойдёт автоматически через Vercel Cron или внешний cron-сервис. Админку держать открытой не нужно.</p>
       <div class="grid" style="margin-top:12px">
@@ -557,19 +962,21 @@
       <p class="sub" style="margin-top:10px">Время вводится по вашему устройству. Cron проверяет очередь по UTC, но дата сохраняется правильно с учётом вашего часового пояса.</p>
     </section>
 
-    <section class="card">
-      <div class="row" style="margin-bottom:12px">
+    <section id="leadsSection" class="card">
+      <div class="card-head"><div><div class="card-kicker">Заявки</div><h2>Статистика заявок из мини-приложения</h2><p class="sub">Следи за источниками и кампаниями, которые приводят реальные обращения.</p></div><button class="secondary" id="loadLeadStatsBtn" type="button" style="max-width:240px">Обновить статистику</button></div>
+      <div class="row" style="margin-bottom:12px; display:none">
         <h2 style="flex:2">Статистика заявок из мини-приложения</h2>
-        <button class="secondary" id="loadLeadStatsBtn" type="button">Обновить статистику</button>
+        <button class="secondary" type="button">Обновить статистику</button>
       </div>
       <div id="leadStats" class="history-list muted">Статистика ещё не загружена.</div>
       <p class="sub" style="margin-top:10px">Заявки группируются по UTM-кампании и источнику. Так видно, какие посты дают заявки.</p>
     </section>
 
-    <section class="card">
-      <div class="row" style="margin-bottom:12px">
+    <section id="audienceSection" class="card">
+      <div class="card-head"><div><div class="card-kicker">Аудитории</div><h2>Аудитория / Яндекс Директ</h2><p class="sub">Смотри накопленную аудиторию и выгружай контакты для дальнейшего маркетинга.</p></div><button class="secondary" id="loadAudienceStatsBtn" type="button" style="max-width:240px">Обновить аудиторию</button></div>
+      <div class="row" style="margin-bottom:12px; display:none">
         <h2 style="flex:2">Аудитория / Яндекс Директ</h2>
-        <button class="secondary" id="loadAudienceStatsBtn" type="button">Обновить аудиторию</button>
+        <button class="secondary" type="button">Обновить аудиторию</button>
       </div>
       <div id="audienceStats" class="history-list muted">Аудитория ещё не загружена.</div>
       <div class="row" style="margin-top:12px">
@@ -579,14 +986,16 @@
       <p class="sub" style="margin-top:10px">Все открытия /miniapp сохраняются в max_miniapp_visits. Для Яндекс Аудиторий выгружаются только контакты с телефоном и согласием на рекламу. Для ретаргетинга всех посетителей добавь в Vercel переменную YANDEX_METRIKA_COUNTER_ID и создай цели miniapp_open / miniapp_lead.</p>
     </section>
 
-    <section class="card">
+    <section id="statusSection" class="card">
+      <div class="card-head"><div><div class="card-kicker">Логи</div><h2>Текущий статус</h2><p class="sub">Подробный системный лог действия, дополнительно к верхней строке статуса.</p></div></div>
       <label class="title">Статус</label>
       <div id="status" class="status muted">Готово к работе.</div>
     </section>
 
-    <section class="card">
+    <section id="historySection" class="card">
+      <div class="card-head"><div><div class="card-kicker">История</div><h2>История отправок</h2><p class="sub">Последние публикации, ошибки и результаты отправки по группам.</p></div></div>
       <div class="row" style="margin-bottom:12px">
-        <h2 style="flex:2">История отправок</h2>
+        <h2 style="flex:2; display:none">История отправок</h2>
         <button class="secondary" id="refreshHistoryBtn" type="button">Обновить</button>
         <button class="danger" id="clearHistoryBtn" type="button">Очистить</button>
       </div>
@@ -1369,6 +1778,46 @@
       await loadAudienceStats();
     }
 
+
+
+    function setupCollapsibleCards() {
+      document.querySelectorAll('.card').forEach((card) => {
+        const head = card.querySelector(':scope > .card-head');
+        if (!head || head.querySelector('.collapse-btn')) return;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'secondary collapse-btn';
+        btn.textContent = 'Свернуть';
+        btn.addEventListener('click', () => {
+          card.classList.toggle('collapsed');
+          btn.textContent = card.classList.contains('collapsed') ? 'Развернуть' : 'Свернуть';
+        });
+        head.appendChild(btn);
+      });
+    }
+
+    function setupActiveSideNav() {
+      const links = Array.from(document.querySelectorAll('.side-nav a'));
+      if (!links.length || !('IntersectionObserver' in window)) return;
+      const byId = new Map(links.map((link) => [link.getAttribute('href')?.replace('#', ''), link]));
+      const observer = new IntersectionObserver((entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => Math.abs(a.boundingClientRect.top) - Math.abs(b.boundingClientRect.top))[0];
+        if (!visible) return;
+        links.forEach((link) => {
+          link.style.background = '';
+          link.style.color = '';
+        });
+        const active = byId.get(visible.target.id);
+        if (active) {
+          active.style.background = 'var(--accent-soft)';
+          active.style.color = 'var(--accent)';
+        }
+      }, { rootMargin: '-120px 0px -60% 0px', threshold: 0.1 });
+      document.querySelectorAll('.card[id]').forEach((section) => observer.observe(section));
+    }
+
     el('password').addEventListener('keydown', async (event) => {
       if (event.key === 'Enter') {
         event.preventDefault();
@@ -1428,6 +1877,8 @@
     updateMiniappUrl();
     updateMiniappButtonPreview();
     updateWebhookUrl();
+    setupCollapsibleCards();
+    setupActiveSideNav();
     setDefaultScheduledAt();
     renderTemplateButtons();
     setStatus('Готово к работе.', 'ok');
