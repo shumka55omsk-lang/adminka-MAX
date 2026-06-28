@@ -302,6 +302,11 @@
       </div>
     </section>
 
+    <section class="card" id="trackingCard" style="display:none">
+      <h2 class="section-title">Источник заявки</h2>
+      <div class="mini-note" id="trackingInfo">Заявка открыта из рекламного поста.</div>
+    </section>
+
     <section class="card">
       <h2 class="section-title">1. Тип объекта <small>выберите один</small></h2>
       <div class="choice-grid" id="objectChoices">
@@ -369,6 +374,7 @@
         </div>
       </div>
       <div class="breakdown" id="breakdown">Добавьте размеры, чтобы увидеть расчёт.</div>
+      <div id="priceSource" class="mini-note">Цены загружаются...</div>
       <div class="mini-note">Это предварительный расчёт. Точная цена зависит от крепления, окантовки, молний, сложности доступа и замера.</div>
     </section>
 
@@ -407,6 +413,7 @@
       installPerM2: 500,
       zipperPerOpening: 700,
       minOrder: 5000,
+      priceSource: 'default',
       maxPhotoBytes: 1300 * 1024,
       maxPhotoSide: 1600
     };
@@ -415,7 +422,8 @@
       contact: null,
       webApp: window.WebApp || null,
       photoDataUrl: '',
-      photoInfo: null
+      photoInfo: null,
+      attribution: {}
     };
 
     const $ = (id) => document.getElementById(id);
@@ -424,6 +432,32 @@
       const el = $('status');
       el.className = `status show ${type}`;
       el.textContent = text;
+    }
+
+    function getAttribution() {
+      const params = new URLSearchParams(window.location.search);
+      const pick = (key, fallback = '') => String(params.get(key) || fallback || '').trim().slice(0, 160);
+      return {
+        source: pick('source', pick('utm_source', 'max_miniapp')),
+        utm_source: pick('utm_source', pick('source', 'max_miniapp')),
+        utm_medium: pick('utm_medium', ''),
+        utm_campaign: pick('utm_campaign', ''),
+        utm_content: pick('utm_content', ''),
+        utm_term: pick('utm_term', ''),
+        ref_chat_id: pick('ref_chat_id', ''),
+        landing_url: window.location.href
+      };
+    }
+
+    function renderAttribution() {
+      state.attribution = getAttribution();
+      const hasTracking = Boolean(state.attribution.utm_campaign || state.attribution.utm_content || state.attribution.source !== 'max_miniapp');
+      const card = $('trackingCard');
+      const info = $('trackingInfo');
+      if (card && info && hasTracking) {
+        card.style.display = '';
+        info.textContent = `Источник: ${state.attribution.source || '—'} · кампания: ${state.attribution.utm_campaign || '—'} · пост: ${state.attribution.utm_content || '—'}`;
+      }
     }
 
     function safeOpenLink(url) {
@@ -491,6 +525,36 @@
         heightCm: Number(row.querySelector('.height').value || 0),
         count: Number(row.querySelector('.count').value || 1)
       })).filter((w) => w.widthCm > 0 && w.heightCm > 0 && w.count > 0);
+    }
+
+    function applyPriceSettings(settings = {}, storage = 'default') {
+      const read = (value, fallback) => {
+        const n = Number(value);
+        return Number.isFinite(n) && n >= 0 ? Math.round(n) : fallback;
+      };
+      CONFIG.pricePerM2 = read(settings.manufacturing_price_per_m2, CONFIG.pricePerM2);
+      CONFIG.installPerM2 = read(settings.installation_price_per_m2, CONFIG.installPerM2);
+      CONFIG.zipperPerOpening = read(settings.zipper_price_per_opening, CONFIG.zipperPerOpening);
+      CONFIG.minOrder = read(settings.min_order_price, CONFIG.minOrder);
+      CONFIG.priceSource = storage || 'default';
+      const source = $('priceSource');
+      if (source) {
+        source.textContent = `Цены: ${CONFIG.pricePerM2} ₽/м² · монтаж ${CONFIG.installPerM2} ₽/м² · молния ${CONFIG.zipperPerOpening} ₽ · минимум ${CONFIG.minOrder} ₽ (${CONFIG.priceSource === 'supabase' ? 'из Supabase' : 'по умолчанию'})`;
+      }
+    }
+
+    async function loadPriceSettings() {
+      try {
+        const response = await fetch('/api/price-settings');
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.ok) throw new Error(data.error || `Ошибка ${response.status}`);
+        applyPriceSettings(data.settings || {}, data.storage);
+      } catch (error) {
+        const source = $('priceSource');
+        if (source) source.textContent = 'Цены по умолчанию. Не удалось загрузить настройки из Supabase.';
+        console.warn('Price settings warning', error);
+      }
+      calculate();
     }
 
     function calculate() {
@@ -653,7 +717,8 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            source: 'max-miniapp-soft-windows-v16',
+            source: state.attribution.source || 'max-miniapp-soft-windows-v20',
+            attribution: state.attribution,
             initData: state.webApp?.initData || '',
             initDataUnsafe: getInitDataUnsafe(),
             contact: state.contact,
@@ -715,6 +780,8 @@
 
     addWindow({ widthCm: 250, heightCm: 180, count: 1 });
     initMax();
+    renderAttribution();
+    loadPriceSettings();
   </script>
 </body>
 </html>

@@ -383,7 +383,7 @@
   <main class="wrap">
     <div class="top">
       <div>
-        <h1>Рассылка MAX <span style="font-size:14px;color:#667085">v17</span></h1>
+        <h1>Рассылка MAX <span style="font-size:14px;color:#667085">v20</span></h1>
         <p class="sub">MVP-админка: рассылка, Webhook, расписание и мини-приложение MAX для заявок.</p>
       </div>
     </div>
@@ -392,9 +392,9 @@
       <div id="topStatusDot" class="top-status-dot"></div>
       <div>
         <div id="topStatusTitle" class="top-status-title">Статус: готово</div>
-        <div id="topStatusMessage" class="top-status-message">Готово к работе. v17: исправлен деплой Vercel Hobby, vercel.json удалён.</div>
+        <div id="topStatusMessage" class="top-status-message">Готово к работе. v20: рекламные посты могут вести в мини-приложение с UTM-метками.</div>
       </div>
-      <div class="version-badge">v17</div>
+      <div class="version-badge">v20</div>
       <div id="topStatusTime" class="top-status-time">—</div>
     </div>
 
@@ -422,6 +422,36 @@
         <button class="secondary" id="openMiniappBtn" type="button">Открыть мини-приложение</button>
         <button class="secondary" id="copyMiniappBtn" type="button">Скопировать ссылку</button>
       </div>
+    </section>
+
+    <section class="card">
+      <label class="title">Настройки цен мини-приложения</label>
+      <p class="sub">Эти цены берутся из Supabase и используются в /miniapp без нового деплоя Vercel.</p>
+      <div class="grid">
+        <div>
+          <label for="priceM2">Цена изготовления за м², ₽</label>
+          <input id="priceM2" type="number" min="0" step="1" placeholder="1500" />
+        </div>
+        <div>
+          <label for="installM2">Монтаж за м², ₽</label>
+          <input id="installM2" type="number" min="0" step="1" placeholder="500" />
+        </div>
+      </div>
+      <div class="grid">
+        <div>
+          <label for="zipperPrice">Молния за проём, ₽</label>
+          <input id="zipperPrice" type="number" min="0" step="1" placeholder="700" />
+        </div>
+        <div>
+          <label for="minOrderPrice">Минимальный заказ, ₽</label>
+          <input id="minOrderPrice" type="number" min="0" step="1" placeholder="5000" />
+        </div>
+      </div>
+      <div class="row">
+        <button class="secondary" id="loadPricesBtn" type="button">Загрузить цены</button>
+        <button class="secondary" id="savePricesBtn" type="button">Сохранить цены</button>
+      </div>
+      <p class="sub" id="priceSettingsInfo" style="margin-top:10px">Цены ещё не загружены.</p>
     </section>
 
     <section class="card">
@@ -491,6 +521,20 @@
         <input id="telegram" placeholder="Telegram" value="https://t.me/Anvar_company" />
         <input id="site" placeholder="Сайт" value="https://мягкиеокна55.рф" />
       </div>
+      <div style="height:12px"></div>
+      <label style="display:flex;gap:10px;align-items:center;margin:0 0 12px">
+        <input id="addMiniappButton" type="checkbox" checked style="width:auto;margin:0" />
+        <span><b>Добавить кнопку “Рассчитать стоимость”</b></span>
+      </label>
+      <div class="grid">
+        <input id="miniappButtonText" placeholder="Текст кнопки" value="Рассчитать стоимость" />
+        <input id="utmCampaign" placeholder="UTM кампания, например besedki_july" value="soft_windows_post" />
+      </div>
+      <div class="grid">
+        <input id="utmContent" placeholder="UTM content / номер поста" value="post_1" />
+        <input id="utmMedium" placeholder="UTM medium" value="max_group" />
+      </div>
+      <p class="sub" id="miniappButtonPreview" style="margin-top:10px">Ссылка мини-приложения будет сформирована автоматически.</p>
       <p class="sub" style="margin-top:10px">MAX принимает в кнопках только ссылки формата http:// или https://. Телефон лучше писать прямо в тексте поста: 48-98-78.</p>
     </section>
 
@@ -511,6 +555,15 @@
       </div>
       <div id="scheduledList" class="scheduled-list muted" style="margin-top:12px">Запланированных постов пока нет.</div>
       <p class="sub" style="margin-top:10px">Время вводится по вашему устройству. Cron проверяет очередь по UTC, но дата сохраняется правильно с учётом вашего часового пояса.</p>
+    </section>
+
+    <section class="card">
+      <div class="row" style="margin-bottom:12px">
+        <h2 style="flex:2">Статистика заявок из мини-приложения</h2>
+        <button class="secondary" id="loadLeadStatsBtn" type="button">Обновить статистику</button>
+      </div>
+      <div id="leadStats" class="history-list muted">Статистика ещё не загружена.</div>
+      <p class="sub" style="margin-top:10px">Заявки группируются по UTM-кампании и источнику. Так видно, какие посты дают заявки.</p>
     </section>
 
     <section class="card">
@@ -616,6 +669,34 @@
       return /^https?:\/\//i.test(String(url || '').trim());
     }
 
+    function slugPart(value, fallback) {
+      return String(value || fallback || '')
+        .trim()
+        .replace(/\s+/g, '_')
+        .replace(/[^a-zA-Z0-9_\-а-яА-ЯёЁ]/g, '')
+        .slice(0, 80) || fallback;
+    }
+
+    function getMiniappTrackingUrl() {
+      const url = new URL('/miniapp', window.location.origin);
+      url.searchParams.set('source', 'max_group');
+      url.searchParams.set('utm_source', 'max_group');
+      url.searchParams.set('utm_medium', slugPart(el('utmMedium')?.value, 'max_group'));
+      url.searchParams.set('utm_campaign', slugPart(el('utmCampaign')?.value, 'soft_windows_post'));
+      url.searchParams.set('utm_content', slugPart(el('utmContent')?.value, 'post_1'));
+      return url.toString();
+    }
+
+    function updateMiniappButtonPreview() {
+      const box = el('miniappButtonPreview');
+      if (!box) return;
+      if (!el('addMiniappButton')?.checked) {
+        box.textContent = 'Кнопка “Рассчитать стоимость” отключена.';
+        return;
+      }
+      box.textContent = `Кнопка: “${el('miniappButtonText')?.value || 'Рассчитать стоимость'}” → ${getMiniappTrackingUrl()}`;
+    }
+
     function getButtons() {
       const buttons = [];
       const invalid = [];
@@ -624,6 +705,9 @@
         ['Telegram', el('telegram').value.trim()],
         ['Сайт', el('site').value.trim()]
       ];
+      if (el('addMiniappButton')?.checked) {
+        map.unshift([el('miniappButtonText')?.value.trim() || 'Рассчитать стоимость', getMiniappTrackingUrl()]);
+      }
       for (const [text, url] of map) {
         if (!url) continue;
         if (!isHttpUrl(url)) {
@@ -777,6 +861,62 @@
         setStatus('Доступ к группе есть:\n' + JSON.stringify(data.data, null, 2), 'ok');
       } catch (error) {
         setStatus('Ошибка проверки доступа:\n' + error.message, 'err');
+      }
+    }
+
+    function fillPriceInputs(settings = {}) {
+      if (el('priceM2')) el('priceM2').value = Number(settings.manufacturing_price_per_m2 ?? 1500);
+      if (el('installM2')) el('installM2').value = Number(settings.installation_price_per_m2 ?? 500);
+      if (el('zipperPrice')) el('zipperPrice').value = Number(settings.zipper_price_per_opening ?? 700);
+      if (el('minOrderPrice')) el('minOrderPrice').value = Number(settings.min_order_price ?? 5000);
+    }
+
+    function readPriceInputs() {
+      const read = (id, fallback) => {
+        const n = Number(el(id)?.value || fallback);
+        return Number.isFinite(n) && n >= 0 ? Math.round(n) : fallback;
+      };
+      return {
+        manufacturing_price_per_m2: read('priceM2', 1500),
+        installation_price_per_m2: read('installM2', 500),
+        zipper_price_per_opening: read('zipperPrice', 700),
+        min_order_price: read('minOrderPrice', 5000)
+      };
+    }
+
+    async function loadPriceSettings() {
+      try {
+        setStatus('Загружаю настройки цен...');
+        const data = await fetch('/api/price-settings').then(async (r) => {
+          const json = await r.json().catch(() => ({}));
+          if (!r.ok || !json.ok) throw new Error(JSON.stringify(json || { status: r.status }, null, 2));
+          return json;
+        });
+        fillPriceInputs(data.settings || {});
+        const info = el('priceSettingsInfo');
+        if (info) info.textContent = `Цены загружены: ${data.storage === 'supabase' ? 'Supabase' : 'по умолчанию'}.`;
+        setStatus('Настройки цен загружены.', 'ok');
+      } catch (error) {
+        setStatus('Ошибка загрузки цен:\n' + error.message, 'err');
+      }
+    }
+
+    async function savePriceSettings() {
+      try {
+        if (!getPassword()) return setStatus('Введите пароль админки.', 'err');
+        const payload = readPriceInputs();
+        setStatus('Сохраняю настройки цен...');
+        const data = await apiFetch('/api/price-settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        fillPriceInputs(data.settings || payload);
+        const info = el('priceSettingsInfo');
+        if (info) info.textContent = 'Цены сохранены в Supabase. Мини-приложение подхватит их при следующем открытии.';
+        setStatus('Настройки цен сохранены в Supabase:\n' + JSON.stringify(data.settings, null, 2), 'ok');
+      } catch (error) {
+        setStatus('Ошибка сохранения цен:\n' + error.message, 'err');
       }
     }
 
@@ -1069,6 +1209,39 @@
       }).join('');
     }
 
+    async function loadLeadStats() {
+      const box = el('leadStats');
+      if (!box) return;
+      if (!getPassword()) {
+        box.className = 'history-list muted';
+        box.textContent = 'Введите пароль, чтобы загрузить статистику.';
+        return;
+      }
+      try {
+        setStatus('Загружаю статистику заявок...');
+        const data = await apiFetch('/api/lead-stats?limit=300');
+        const items = Array.isArray(data.items) ? data.items : [];
+        if (!items.length) {
+          box.className = 'history-list muted';
+          box.textContent = 'Заявок с UTM-метками пока нет.';
+          return setStatus('Статистика заявок загружена: пока пусто.', 'ok');
+        }
+        box.className = 'history-list';
+        box.innerHTML = items.map((item) => `
+          <div class="history-item">
+            <strong>${escapeHtml(item.campaign || 'без кампании')} <span class="pill">${Number(item.count || 0)} заявок</span></strong>
+            <div class="muted">Источник: ${escapeHtml(item.source || 'не указан')} · medium: ${escapeHtml(item.medium || 'не указан')} · content: ${escapeHtml(item.content || 'не указан')}</div>
+            <div class="muted">Сумма предварительно: ${Number(item.estimated_total_sum || 0).toLocaleString('ru-RU')} ₽ · последняя заявка: ${item.last_created_at ? new Date(item.last_created_at).toLocaleString('ru-RU') : '—'}</div>
+          </div>
+        `).join('');
+        setStatus(`Статистика заявок загружена. Кампаний: ${items.length}.`, 'ok');
+      } catch (error) {
+        box.className = 'history-list muted';
+        box.textContent = 'Не удалось загрузить статистику.';
+        setStatus('Ошибка загрузки статистики заявок:\n' + error.message, 'err');
+      }
+    }
+
     async function clearHistory() {
       try {
         if (getPassword()) {
@@ -1118,6 +1291,8 @@
       await renderHistory();
       await renderScheduledPosts();
       await loadTemplates();
+      await loadPriceSettings();
+      await loadLeadStats();
     }
 
     el('password').addEventListener('keydown', async (event) => {
@@ -1141,6 +1316,13 @@
     el('clearImageBtn').addEventListener('click', clearImage);
     el('refreshHistoryBtn').addEventListener('click', renderHistory);
     el('clearHistoryBtn').addEventListener('click', clearHistory);
+    el('loadPricesBtn')?.addEventListener('click', loadPriceSettings);
+    el('savePricesBtn')?.addEventListener('click', savePriceSettings);
+    el('loadLeadStatsBtn')?.addEventListener('click', loadLeadStats);
+    ['addMiniappButton','miniappButtonText','utmCampaign','utmContent','utmMedium'].forEach((id) => {
+      el(id)?.addEventListener('input', updateMiniappButtonPreview);
+      el(id)?.addEventListener('change', updateMiniappButtonPreview);
+    });
 
     function getMiniappUrl() {
       return `${window.location.origin}/miniapp`;
@@ -1167,12 +1349,14 @@
     });
 
     updateMiniappUrl();
+    updateMiniappButtonPreview();
     updateWebhookUrl();
     setDefaultScheduledAt();
     renderTemplateButtons();
     setStatus('Готово к работе.', 'ok');
     renderHistory();
     renderScheduledPosts();
+    loadPriceSettings();
   </script>
 </body>
 </html>

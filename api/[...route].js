@@ -3,9 +3,11 @@ import cronSendScheduled from '../lib/api/cron-send-scheduled.js';
 import diagnostics from '../lib/api/diagnostics.js';
 import groups from '../lib/api/groups.js';
 import history from '../lib/api/history.js';
+import leadStats from '../lib/api/lead-stats.js';
 import maxWebhook from '../lib/api/max-webhook.js';
 import miniappLeads from '../lib/api/miniapp-leads.js';
 import miniappSubmit from '../lib/api/miniapp-submit.js';
+import priceSettings from '../lib/api/price-settings.js';
 import schedulePost from '../lib/api/schedule-post.js';
 import scheduledPosts from '../lib/api/scheduled-posts.js';
 import sendMaxPost from '../lib/api/send-max-post.js';
@@ -14,11 +16,11 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v18-schema-fix',
-  builtAt: '2026-06-27T19:25:00Z',
+  version: 'v20-post-miniapp-tracking',
+  builtAt: '2026-06-28T02:55:00Z',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
-  reason: 'Vercel Hobby compatible router + Supabase miniapp schema fallback'
+  reason: 'Vercel Hobby router + post miniapp button + UTM lead tracking'
 };
 
 const routes = new Map([
@@ -27,9 +29,11 @@ const routes = new Map([
   ['diagnostics', diagnostics],
   ['groups', groups],
   ['history', history],
+  ['lead-stats', leadStats],
   ['max-webhook', maxWebhook],
   ['miniapp-leads', miniappLeads],
   ['miniapp-submit', miniappSubmit],
+  ['price-settings', priceSettings],
   ['schedule-post', schedulePost],
   ['scheduled-posts', scheduledPosts],
   ['send-max-post', sendMaxPost],
