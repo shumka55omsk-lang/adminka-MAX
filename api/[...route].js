@@ -16,11 +16,11 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v20-post-miniapp-tracking',
-  builtAt: '2026-06-28T02:55:00Z',
+  version: 'v21-button-row-fix',
+  builtAt: '2026-06-28T03:35:00Z',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
-  reason: 'Vercel Hobby router + post miniapp button + UTM lead tracking'
+  reason: 'Vercel Hobby router + MAX inline keyboard row-size fix'
 };
 
 const routes = new Map([
