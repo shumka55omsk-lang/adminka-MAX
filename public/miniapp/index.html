@@ -161,7 +161,9 @@
       background: #e7f6f2;
       box-shadow: 0 0 0 4px rgba(15,118,110,.09);
     }
-    .choice .emoji { font-size: 24px; display: block; margin-bottom: 6px; }
+    .choice .emoji { display:flex; align-items:center; justify-content:center; width:52px; height:52px; margin:0 auto 8px; border-radius:16px; background:linear-gradient(135deg, rgba(15,118,110,.12), rgba(245,158,11,.14)); color:var(--accent); box-shadow: inset 0 1px 0 rgba(255,255,255,.7); }
+    .choice .emoji svg { width:28px; height:28px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .choice.active .emoji { background: linear-gradient(135deg, rgba(15,118,110,.18), rgba(245,158,11,.22)); }
     .choice b { display: block; font-size: 13px; }
     .choice span { display: block; color: var(--muted); font-size: 11px; margin-top: 4px; line-height: 1.25; }
 
@@ -328,8 +330,8 @@
   <main class="app">
     <section class="hero">
       <div class="badge">🟢 MAX mini app · Мягкие окна Омск</div>
-      <h1>Заказать замер мягких окон</h1>
-      <p class="subtitle">Выберите объект, добавьте размеры и фото проёма. Мы получим заявку в MAX/CRM и подготовим точный расчёт.</p>
+      <h1>Заказать бесплатный замер мягких окон</h1>
+      <p class="subtitle">Выберите объект, добавьте размеры и фото проёма. Мы быстро свяжемся с вами, уточним детали и подготовим точный расчёт.</p>
       <div class="hero-metrics">
         <div class="hero-metric"><b>ПВХ 700 мкм</b><span>для беседок и террас</span></div>
         <div class="hero-metric"><b>Замер</b><span>Омск и область</span></div>
@@ -351,9 +353,9 @@
     <section class="card quiz-step active" data-step="1" data-title="Тип объекта">
       <h2 class="section-title">1. Тип объекта <small>выберите один</small></h2>
       <div class="choice-grid" id="objectChoices">
-        <button class="choice active" type="button" data-value="Беседка" data-factor="1"><span class="emoji">🏡</span><b>Беседка</b><span>частный дом / дача</span></button>
-        <button class="choice" type="button" data-value="Веранда" data-factor="1"><span class="emoji">🪟</span><b>Веранда</b><span>проёмы и входная зона</span></button>
-        <button class="choice" type="button" data-value="Терраса" data-factor="1"><span class="emoji">🌿</span><b>Терраса</b><span>защита от ветра и дождя</span></button>
+        <button class="choice active" type="button" data-value="Беседка" data-factor="1"><span class="emoji" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"></path><path d="M5 10.5V20h14v-9.5"></path><path d="M8 20v-5h8v5"></path><path d="M16.5 8.5v-3h2v4.5"></path></svg></span><b>Беседка</b><span>садовая зона / дача</span></button>
+        <button class="choice" type="button" data-value="Веранда" data-factor="1"><span class="emoji" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20V7.5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2V20"></path><path d="M8 20v-7h8v7"></path><path d="M7 9h10"></path><path d="M12 5.5v7.5"></path></svg></span><b>Веранда</b><span>входная зона / проёмы</span></button>
+        <button class="choice" type="button" data-value="Терраса" data-factor="1"><span class="emoji" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 10h16"></path><path d="M6 10V7.5A2.5 2.5 0 0 1 8.5 5h7A2.5 2.5 0 0 1 18 7.5V10"></path><path d="M7 10v9"></path><path d="M17 10v9"></path><path d="M4 19h16"></path><path d="M10 14h4"></path></svg></span><b>Терраса</b><span>открытая зона отдыха</span></button>
         <button class="choice" type="button" data-value="Кафе / летник" data-factor="1.12"><span class="emoji">☕</span><b>Кафе</b><span>летник / уличная зона</span></button>
         <button class="choice" type="button" data-value="Навес" data-factor="1"><span class="emoji">⛱️</span><b>Навес</b><span>прямые проёмы</span></button>
         <button class="choice" type="button" data-value="Другое" data-factor="1"><span class="emoji">✏️</span><b>Другое</b><span>уточним по фото</span></button>
@@ -465,7 +467,7 @@
         <input id="adConsent" type="checkbox" />
         <span>Хочу получать акции и скидки по мягким окнам</span>
       </label>
-      <button class="primary" id="submitBtn" type="button">Заказать замер</button>
+      <button class="primary" id="submitBtn" type="button">Заказать бесплатный замер</button>
       <div class="soft-consent-note" id="privacyConsentText">
         Нажимая кнопку, вы соглашаетесь с обработкой данных для связи по заявке.
         <span id="privacyLinkWrap" style="display:none"> <a class="tiny-link" id="privacyLink" href="#">Политика конфиденциальности</a></span>
