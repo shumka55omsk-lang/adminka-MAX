@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>Мягкие окна — заявка на замер</title>
   <script src="https://st.max.ru/js/max-web-app.js"></script>
   <style>
@@ -146,37 +149,47 @@
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 
-    .choice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .choice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
     .choice {
       position: relative;
       overflow: hidden;
-      border: 1px solid rgba(13, 24, 45, .08);
-      border-radius: 24px;
-      background: linear-gradient(180deg, rgba(255,255,255,.96) 0%, rgba(249,252,255,.96) 100%);
-      padding: 14px 12px;
+      border: 0;
+      border-radius: 28px;
+      background: #fff;
+      padding: 0 0 15px;
       cursor: pointer;
-      min-height: 112px;
+      min-height: 162px;
       text-align: center;
-      box-shadow: 0 10px 26px rgba(15, 23, 42, .06);
-      transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease, background .22s ease;
-    }
-    .choice::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at top right, rgba(15,118,110,.08), transparent 34%), radial-gradient(circle at bottom left, rgba(245,158,11,.08), transparent 30%);
-      pointer-events: none;
+      box-shadow: 0 16px 38px rgba(15, 23, 42, .10);
+      transition: transform .22s ease, box-shadow .22s ease, outline-color .22s ease;
+      outline: 1px solid rgba(13, 24, 45, .07);
     }
     .choice:hover {
-      transform: translateY(-3px);
-      border-color: rgba(15,118,110,.22);
-      box-shadow: 0 18px 34px rgba(15, 23, 42, .10);
+      transform: translateY(-4px);
+      box-shadow: 0 24px 46px rgba(15, 23, 42, .14);
+      outline-color: rgba(15,118,110,.30);
     }
     .choice.active {
-      border-color: rgba(15,118,110,.42);
-      background: linear-gradient(180deg, #effcf8 0%, #e8f9f3 100%);
-      box-shadow: 0 0 0 4px rgba(15,118,110,.08), 0 18px 34px rgba(15, 118, 110, .12);
-      transform: translateY(-2px);
+      outline: 3px solid rgba(15,118,110,.42);
+      box-shadow: 0 0 0 5px rgba(15,118,110,.08), 0 24px 46px rgba(15,118,110,.16);
+      transform: translateY(-3px);
+    }
+    .choice.active::after {
+      content: '✓';
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      z-index: 3;
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background: #0f766e;
+      color: #fff;
+      font-weight: 900;
+      box-shadow: 0 8px 18px rgba(15,118,110,.26);
     }
     .choice .emoji {
       position: relative;
@@ -184,18 +197,22 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      width:58px;
-      height:58px;
-      margin:0 auto 10px;
-      border-radius:18px;
-      background:linear-gradient(135deg, rgba(15,118,110,.12), rgba(245,158,11,.16));
-      color:var(--accent);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.85), 0 8px 18px rgba(15,118,110,.08);
+      width:100%;
+      height:96px;
+      margin:0 0 13px;
+      border-radius:28px 28px 22px 22px;
+      color:#0f766e;
+      background:linear-gradient(135deg, #dff8ef 0%, #fff4d8 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
     }
-    .choice .emoji svg { width:30px; height:30px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-    .choice.active .emoji { background: linear-gradient(135deg, rgba(15,118,110,.2), rgba(245,158,11,.24)); }
-    .choice b { position: relative; z-index: 1; display: block; font-size: 14px; letter-spacing: -.01em; }
-    .choice span { position: relative; z-index: 1; display: block; color: var(--muted); font-size: 11px; margin-top: 5px; line-height: 1.35; max-width: 140px; margin-left:auto; margin-right:auto; }
+    .choice:nth-child(2) .emoji { background:linear-gradient(135deg, #e4f4ff 0%, #e7fbf5 100%); color:#0e7490; }
+    .choice:nth-child(3) .emoji { background:linear-gradient(135deg, #e9fbea 0%, #fff2d6 100%); color:#15803d; }
+    .choice:nth-child(4) .emoji { background:linear-gradient(135deg, #fff3dc 0%, #fef2f2 100%); color:#b45309; }
+    .choice:nth-child(5) .emoji { background:linear-gradient(135deg, #e6f4ff 0%, #f0f9ff 100%); color:#0369a1; }
+    .choice:nth-child(6) .emoji { background:linear-gradient(135deg, #f3f4f6 0%, #fef3c7 100%); color:#374151; }
+    .choice .emoji svg { width:52px; height:52px; stroke: currentColor; fill: none; stroke-width: 1.55; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 6px 10px rgba(15,23,42,.12)); }
+    .choice b { position: relative; z-index: 1; display: block; font-size: 16px; letter-spacing: -.02em; padding:0 12px; }
+    .choice span { position: relative; z-index: 1; display: block; color: var(--muted); font-size: 12px; margin-top: 6px; line-height: 1.35; max-width: 150px; margin-left:auto; margin-right:auto; padding:0 10px; }
 
     .pill-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .pill {
@@ -359,7 +376,7 @@
 <body>
   <main class="app">
     <section class="hero">
-      <div class="badge">🟢 MAX mini app · Мягкие окна Омск</div>
+      <div class="badge">🟢 Бесплатный замер · Мягкие окна Омск</div>
       <h1>Заказать бесплатный замер мягких окон</h1>
       <p class="subtitle">Выберите объект, добавьте размеры и фото проёма. Мы быстро свяжемся с вами, уточним детали и подготовим точный расчёт.</p>
       <div class="hero-metrics">
