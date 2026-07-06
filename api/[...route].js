@@ -22,11 +22,11 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v30-miniapp-all-icons',
-  builtAt: '2026-06-29T06:00:00Z',
+  version: 'v31-premium-object-cards',
+  builtAt: '2026-06-29T06:35:00Z',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
-  reason: 'Vercel Hobby router + unified custom icons for all object cards + mini app wording cleanup'
+  reason: 'Vercel Hobby router + premium object cards + unified custom icons + improved mini app presentation'
 };
 
 const routes = new Map([
