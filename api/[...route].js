@@ -22,11 +22,11 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v32-visible-object-cards',
-  builtAt: '2026-07-06T09:00:00Z',
+  version: 'v33-two-client-flows',
+  builtAt: '2026-08-17T13:18:00+06:00',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
-  reason: 'Vercel Hobby router + visibly redesigned object cards + no-cache mini app metadata'
+  reason: 'Vercel Hobby router + two mini app client flows: free measurement or estimate by known sizes'
 };
 
 const routes = new Map([

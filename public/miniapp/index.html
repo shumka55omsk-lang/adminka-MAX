@@ -149,6 +149,41 @@
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 
+    .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .mode-card {
+      position: relative;
+      border: 0;
+      border-radius: 28px;
+      background: #fff;
+      padding: 18px;
+      min-height: 178px;
+      text-align: left;
+      cursor: pointer;
+      outline: 1px solid rgba(13,24,45,.08);
+      box-shadow: 0 16px 38px rgba(15, 23, 42, .10);
+      transition: transform .22s ease, box-shadow .22s ease, outline-color .22s ease;
+      overflow: hidden;
+    }
+    .mode-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 88% 10%, rgba(245,158,11,.18), transparent 32%), radial-gradient(circle at 10% 95%, rgba(15,118,110,.14), transparent 34%);
+      pointer-events: none;
+    }
+    .mode-card:hover { transform: translateY(-4px); box-shadow: 0 24px 46px rgba(15, 23, 42, .14); outline-color: rgba(15,118,110,.30); }
+    .mode-card.active { outline: 3px solid rgba(15,118,110,.48); box-shadow: 0 0 0 5px rgba(15,118,110,.08), 0 24px 46px rgba(15,118,110,.16); }
+    .mode-card.active::after {
+      content: '✓'; position: absolute; right: 14px; top: 14px; z-index: 3; width: 30px; height: 30px; border-radius: 999px;
+      display:flex; align-items:center; justify-content:center; background: var(--accent); color:#fff; font-weight:900;
+    }
+    .mode-visual { position: relative; z-index: 1; display:flex; align-items:center; justify-content:center; width:64px; height:64px; border-radius:20px; margin-bottom:14px; background:linear-gradient(135deg, #dff8ef 0%, #fff4d8 100%); color:var(--accent); }
+    .mode-card:nth-child(2) .mode-visual { background:linear-gradient(135deg, #e4f4ff 0%, #e7fbf5 100%); color:#0e7490; }
+    .mode-visual svg { width:36px; height:36px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    .mode-card b { position: relative; z-index: 1; display:block; font-size:18px; line-height:1.12; letter-spacing:-.03em; margin-bottom:7px; }
+    .mode-card span { position: relative; z-index: 1; display:block; color:var(--muted); font-size:13px; line-height:1.35; }
+    .mode-hint { margin: 10px 0 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+
     .choice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
     .choice {
       position: relative;
@@ -366,7 +401,7 @@
       body { padding-left: 10px; padding-right: 10px; }
       h1 { font-size: 28px; }
       .hero { padding: 18px; min-height: 230px; }
-      .hero-metrics, .choice-grid { grid-template-columns: 1fr; }
+      .hero-metrics, .choice-grid, .mode-grid { grid-template-columns: 1fr; }
       .grid-2, .grid-3, .summary, .pill-row { grid-template-columns: 1fr; }
       .window-row { grid-template-columns: 1fr 1fr; }
       .remove { width: 100%; }
@@ -393,13 +428,31 @@
     </section>
 
     <section class="quiz-progress" id="quizProgress">
-      <div class="quiz-progress-top"><span id="quizStepText">Шаг 1 из 5</span><span id="quizStepTitle">Тип объекта</span></div>
+      <div class="quiz-progress-top"><span id="quizStepText">Шаг 1 из 5</span><span id="quizStepTitle">Цель заявки</span></div>
       <div class="quiz-bar"><div class="quiz-bar-fill" id="quizBarFill"></div></div>
     </section>
 
-    <section class="card quiz-step active" data-step="1" data-title="Тип объекта">
-      <h2 class="section-title">1. Тип объекта <small>выберите вариант</small></h2>
-      <p style="margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.45;">Подберите наиболее похожий тип объекта — это поможет быстрее подготовить корректный расчёт.</p>
+    <section class="card quiz-step active" data-step="1" data-title="Цель заявки">
+      <h2 class="section-title">Что хотите сделать?</h2>
+      <p class="mode-hint">Выберите подходящий вариант. Если размеров нет — не заставляем их вводить, просто примем заявку на бесплатный замер.</p>
+      <div class="mode-grid" id="modeChoices">
+        <button class="mode-card active" type="button" data-mode="measure">
+          <span class="mode-visual" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5z"></path><path d="M8 8h8"></path><path d="M8 12h5"></path><path d="M8 16h3"></path></svg></span>
+          <b>Не знаю размеры</b>
+          <span>Хочу заказать бесплатный замер. Мастер сам уточнит размеры, крепление и детали.</span>
+        </button>
+        <button class="mode-card" type="button" data-mode="estimate">
+          <span class="mode-visual" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"></path><path d="M8 9h8"></path><path d="M8 13h3"></path><path d="M14 13h2"></path><path d="M8 17h8"></path></svg></span>
+          <b>Знаю размеры</b>
+          <span>Хочу указать проёмы и сразу увидеть предварительный диапазон стоимости.</span>
+        </button>
+      </div>
+      <input id="leadMode" type="hidden" value="measure" />
+    </section>
+
+    <section class="card quiz-step" data-step="2" data-title="Тип объекта">
+      <h2 class="section-title">Тип объекта <small>выберите вариант</small></h2>
+      <p style="margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.45;">Подберите наиболее похожий тип объекта — это поможет быстрее подготовить заявку.</p>
       <div class="choice-grid" id="objectChoices">
         <button class="choice active" type="button" data-value="Беседка" data-factor="1"><span class="emoji" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"></path><path d="M5 10.5V20h14v-9.5"></path><path d="M8 20v-5h8v5"></path><path d="M16.5 8.5v-3h2v4.5"></path></svg></span><b>Беседка</b><span>уютная зона отдыха</span></button>
         <button class="choice" type="button" data-value="Веранда" data-factor="1"><span class="emoji" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20V7.5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2V20"></path><path d="M8 20v-7h8v7"></path><path d="M7 9h10"></path><path d="M12 5.5v7.5"></path></svg></span><b>Веранда</b><span>панорамные проёмы</span></button>
@@ -412,8 +465,8 @@
       <input id="objectFactor" type="hidden" value="1" />
     </section>
 
-    <section class="card quiz-step" data-step="2" data-title="Контакты">
-      <h2 class="section-title">2. Контакты</h2>
+    <section class="card quiz-step" data-step="3" data-title="Контакты">
+      <h2 class="section-title">Контакты для связи</h2>
       <div class="grid-2">
         <div>
           <label for="name">Имя</label>
@@ -440,8 +493,8 @@
       </div>
     </section>
 
-    <section class="card quiz-step" data-step="3" data-title="Размеры и опции">
-      <h2 class="section-title">3. Размеры проёмов <small>примерно</small></h2>
+    <section class="card quiz-step" data-step="4" data-title="Размеры и опции">
+      <h2 class="section-title">Размеры проёмов <small>примерно</small></h2>
       <div id="windows"></div>
       <button class="secondary" id="addWindowBtn" type="button">+ Добавить проём</button>
 
@@ -473,8 +526,8 @@
       <div class="mini-note">Это предварительный расчёт. Точная цена зависит от крепления, окантовки, молний, сложности доступа и замера.</div>
     </section>
 
-    <section class="card quiz-step" data-step="4" data-title="Фото">
-      <h2 class="section-title">4. Фото замера <small>необязательно</small></h2>
+    <section class="card quiz-step" data-step="5" data-title="Фото">
+      <h2 class="section-title">Фото объекта <small>необязательно</small></h2>
       <div class="photo-box">
         <label class="photo-btn" for="photoInput">📷 Загрузить фото проёма</label>
         <input id="photoInput" type="file" accept="image/*" capture="environment" />
@@ -487,8 +540,8 @@
       </div>
     </section>
 
-    <section class="card quiz-step" data-step="5" data-title="Комментарий и отправка">
-      <h2 class="section-title">5. Комментарий</h2>
+    <section class="card quiz-step" data-step="6" data-title="Комментарий и отправка">
+      <h2 class="section-title">Комментарий и отправка</h2>
       <textarea id="comment" placeholder="Например: есть уклон крыши, нужна дверь на молнии, крепить к дереву, старые скобы уже стоят"></textarea>
       <div class="link-row">
         <a class="link-btn" href="https://wa.me/79039812452" id="waLink">WhatsApp</a>
@@ -499,7 +552,7 @@
     <section class="card success-card" id="successCard">
       <div class="success-icon">✅</div>
       <h2 class="success-title">Заявка принята</h2>
-      <p class="mini-note">Мы получили ваши размеры. Обычно отвечаем в течение 10–30 минут. Для точного расчёта можно подготовить фото проёма, примерные размеры и адрес объекта.</p>
+      <p class="mini-note" id="successNote">Заявка принята. Обычно отвечаем в течение 10–30 минут.</p>
       <div class="link-row">
         <a class="link-btn" href="https://wa.me/79039812452" id="successWaLink">Написать в WhatsApp</a>
         <a class="link-btn" href="https://t.me/Anvar_company" id="successTgLink">Написать в Telegram</a>
@@ -547,8 +600,9 @@
       visitorId: '',
       visitId: '',
       visitSaved: false,
+      leadMode: 'measure',
       currentStep: 1,
-      maxStep: 5
+      maxStep: 6
     };
 
     const $ = (id) => document.getElementById(id);
@@ -565,8 +619,24 @@
       }[ch]));
     }
 
+    function getVisibleSteps() {
+      return state.leadMode === 'estimate' ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 5, 6];
+    }
+
+    function updateSubmitText() {
+      const btn = $('submitBtn');
+      if (!btn) return;
+      btn.textContent = state.leadMode === 'estimate' ? 'Узнать стоимость и заказать замер' : 'Заказать бесплатный замер';
+    }
+
     function showStep(step) {
-      state.currentStep = Math.max(1, Math.min(state.maxStep, Number(step) || 1));
+      const visibleSteps = getVisibleSteps();
+      let requested = Number(step) || visibleSteps[0];
+      if (!visibleSteps.includes(requested)) {
+        requested = visibleSteps.find((s) => s > requested) || visibleSteps[visibleSteps.length - 1];
+      }
+      state.currentStep = requested;
+      const currentIndex = Math.max(0, visibleSteps.indexOf(state.currentStep));
       document.querySelectorAll('.quiz-step').forEach((card) => {
         card.classList.toggle('active', Number(card.dataset.step) === state.currentStep);
       });
@@ -575,28 +645,33 @@
       const stepText = $('quizStepText');
       const stepTitle = $('quizStepTitle');
       const fill = $('quizBarFill');
-      if (stepText) stepText.textContent = `Шаг ${state.currentStep} из ${state.maxStep}`;
+      if (stepText) stepText.textContent = `Шаг ${currentIndex + 1} из ${visibleSteps.length}`;
       if (stepTitle) stepTitle.textContent = title;
-      if (fill) fill.style.width = `${(state.currentStep / state.maxStep) * 100}%`;
-      if ($('prevStepBtn')) $('prevStepBtn').disabled = state.currentStep === 1;
-      if ($('nextStepBtn')) $('nextStepBtn').style.display = state.currentStep === state.maxStep ? 'none' : '';
-      if ($('submitBtn')) $('submitBtn').style.display = state.currentStep === state.maxStep ? '' : 'none';
+      if (fill) fill.style.width = `${((currentIndex + 1) / visibleSteps.length) * 100}%`;
+      if ($('prevStepBtn')) $('prevStepBtn').disabled = currentIndex === 0;
+      if ($('nextStepBtn')) $('nextStepBtn').style.display = currentIndex === visibleSteps.length - 1 ? 'none' : '';
+      if ($('submitBtn')) $('submitBtn').style.display = currentIndex === visibleSteps.length - 1 ? '' : 'none';
+      updateSubmitText();
       window.scrollTo({ top: Math.max(0, ($('quizProgress')?.offsetTop || 0) - 8), behavior: 'smooth' });
     }
 
     function nextStep() {
-      if (state.currentStep === 2 && !$('name').value.trim() && !$('phone').value.trim()) {
+      if (state.currentStep === 3 && !$('name').value.trim() && !$('phone').value.trim()) {
         status('Можно продолжить, но для заявки в конце понадобится имя или телефон.', 'info');
       }
-      if (state.currentStep === 3 && !getWindows().length) {
-        status('Добавьте хотя бы один размер проёма, чтобы продолжить.', 'bad');
+      if (state.currentStep === 4 && state.leadMode === 'estimate' && !getWindows().length) {
+        status('Добавьте хотя бы один размер проёма, чтобы увидеть стоимость.', 'bad');
         return;
       }
-      showStep(state.currentStep + 1);
+      const visibleSteps = getVisibleSteps();
+      const currentIndex = visibleSteps.indexOf(state.currentStep);
+      showStep(visibleSteps[Math.min(visibleSteps.length - 1, currentIndex + 1)]);
     }
 
     function prevStep() {
-      showStep(state.currentStep - 1);
+      const visibleSteps = getVisibleSteps();
+      const currentIndex = visibleSteps.indexOf(state.currentStep);
+      showStep(visibleSteps[Math.max(0, currentIndex - 1)]);
     }
 
     function getAttribution() {
@@ -965,24 +1040,27 @@
 
     async function submitLead() {
       const estimate = calculate();
+      const isEstimateMode = state.leadMode === 'estimate';
       const form = {
+        leadMode: state.leadMode,
+        requestType: isEstimateMode ? 'Знаю размеры — хочу узнать стоимость' : 'Не знаю размеры — хочу бесплатный замер',
         name: $('name').value.trim(),
         phone: $('phone').value.trim(),
         address: $('address').value.trim(),
         objectType: $('objectType').value,
-        mountingType: $('mountingType').value,
-        needZippers: $('needZippers').value === '1',
+        mountingType: isEstimateMode ? $('mountingType').value : 'Нужен бесплатный замер',
+        needZippers: isEstimateMode ? $('needZippers').value === '1' : false,
         expectedDate: $('expectedDate').value,
         comment: $('comment').value.trim(),
-        windows: estimate.windows
+        windows: isEstimateMode ? estimate.windows : []
       };
 
       if (!form.name && !form.phone) {
         status('Укажите имя или телефон.', 'bad');
         return;
       }
-      if (!estimate.windows.length) {
-        status('Добавьте хотя бы один размер проёма.', 'bad');
+      if (isEstimateMode && !estimate.windows.length) {
+        status('Добавьте хотя бы один размер проёма, чтобы узнать стоимость.', 'bad');
         return;
       }
       $('submitBtn').disabled = true;
@@ -993,7 +1071,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            source: state.attribution.source || 'max-miniapp-soft-windows-v23',
+            source: state.attribution.source || 'max-miniapp-soft-windows-v33',
             attribution: state.attribution,
             visitorId: state.visitorId,
             visitId: state.visitId,
@@ -1020,9 +1098,10 @@
         if (!response.ok || !data.ok) {
           throw new Error(data.error || `Ошибка ${response.status}`);
         }
-        reachGoal('miniapp_lead', { campaign: state.attribution.utm_campaign || '', content: state.attribution.utm_content || '' });
+        reachGoal('miniapp_lead', { mode: state.leadMode, campaign: state.attribution.utm_campaign || '', content: state.attribution.utm_content || '' });
         trackVisit('lead_submit');
-        status('Заявка отправлена. Мы свяжемся с вами и согласуем замер.', 'good');
+        status(isEstimateMode ? 'Заявка отправлена. Мы проверим размеры и свяжемся с вами.' : 'Заявка отправлена. Мы свяжемся с вами и согласуем бесплатный замер.', 'good');
+        if ($('successNote')) $('successNote').textContent = isEstimateMode ? 'Мы получили ваши размеры. Обычно отвечаем в течение 10–30 минут и уточняем детали крепления.' : 'Мы получили заявку на бесплатный замер. Обычно отвечаем в течение 10–30 минут, чтобы согласовать удобное время.';
         $('successCard')?.classList.add('show');
         document.querySelectorAll('.quiz-step').forEach((card) => card.style.display = 'none');
         if ($('quizProgress')) $('quizProgress').style.display = 'none';
@@ -1037,6 +1116,17 @@
         $('submitBtn').disabled = false;
       }
     }
+
+    document.querySelectorAll('#modeChoices .mode-card').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#modeChoices .mode-card').forEach((x) => x.classList.remove('active'));
+        btn.classList.add('active');
+        state.leadMode = btn.dataset.mode || 'measure';
+        if ($('leadMode')) $('leadMode').value = state.leadMode;
+        updateSubmitText();
+        calculate();
+      });
+    });
 
     document.querySelectorAll('#objectChoices .choice').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -1080,7 +1170,8 @@
     $('successTgLink')?.addEventListener('click', (e) => { e.preventDefault(); safeOpenLink(e.currentTarget.href); });
 
     showStep(1);
-    addWindow({ widthCm: 250, heightCm: 180, count: 1 });
+    updateSubmitText();
+    addWindow({});
     initVisitorIds();
     initMax();
     renderAttribution();
