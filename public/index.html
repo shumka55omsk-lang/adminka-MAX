@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MAX Admin v28</title>
+  <title>MAX Admin v35</title>
   <style>
     :root {
       --bg: #09111f;
@@ -1038,7 +1038,7 @@
     <section class="hero">
       <div class="hero-grid">
         <div>
-          <div class="hero-badge">MAX Admin · v34</div>
+          <div class="hero-badge">MAX Admin · v35</div>
           <h1 class="hero-title">Удобная панель управления рассылками, заявками и mini app MAX</h1>
           <p class="hero-text">Добавил боковое меню, быстрый дашборд, сворачиваемые разделы и более удобную структуру для ежедневной работы с постами, группами, заявками и аудиториями.</p>
           <div class="hero-meta">
@@ -1074,9 +1074,9 @@
       <div id="topStatusDot" class="top-status-dot"></div>
       <div>
         <div id="topStatusTitle" class="top-status-title">Статус: готово</div>
-        <div id="topStatusMessage" class="top-status-message">Готово к работе. v34: mini app интегрирован в рекламные посты MAX двумя CTA-кнопками.</div>
+        <div id="topStatusMessage" class="top-status-message">Готово к работе. v35: клиентские кнопки mini app ведут на www.zamer55.ru, а не на домен Vercel.</div>
       </div>
-      <div class="version-badge">v34</div>
+      <div class="version-badge">v35</div>
       <div id="topStatusTime" class="top-status-time">—</div>
     </div>
 
@@ -1115,9 +1115,9 @@
     </section>
 
     <section id="miniappSection" class="card">
-      <div class="card-head"><div><div class="card-kicker">Mini App</div><h2>Мини-приложение MAX</h2><p class="sub">Управление ссылкой и быстрый доступ к клиентской форме расчёта.</p></div></div>
+      <div class="card-head"><div><div class="card-kicker">Mini App</div><h2>Мини-приложение MAX</h2><p class="sub">Клиентская ссылка mini app вынесена на домен www.zamer55.ru, чтобы в рекламных постах не показывать адрес Vercel.</p></div></div>
       <label class="title">Ссылка мини-приложения</label>
-      <p class="sub">Ссылка для настройки в MAX: <b id="miniappUrlText">/miniapp</b></p>
+      <p class="sub">Клиентская ссылка для рекламных постов MAX: <b id="miniappUrlText">https://www.zamer55.ru/miniapp</b></p>
       <div class="row">
         <button class="secondary" id="openMiniappBtn" type="button">Открыть мини-приложение</button>
         <button class="secondary" id="copyMiniappBtn" type="button">Скопировать ссылку</button>
@@ -1383,6 +1383,7 @@
   <script>
     const el = (id) => document.getElementById(id);
     const HISTORY_KEY = 'max_admin_send_history_v3_fallback';
+    const ADMIN_CONFIG = { miniappPublicUrl: 'https://www.zamer55.ru/miniapp' };
     let loadedTemplates = [];
 
     const fallbackTemplates = [
@@ -1475,10 +1476,40 @@
         .slice(0, 80) || fallback;
     }
 
+    function normalizeMiniappPublicUrl(value) {
+      const raw = String(value || '').trim();
+      if (!/^https?:\/\//i.test(raw)) return `${window.location.origin}/miniapp`;
+      try {
+        const url = new URL(raw);
+        if (!url.pathname || url.pathname === '/') url.pathname = '/miniapp';
+        return url.toString().replace(/\/$/, '');
+      } catch {
+        return `${window.location.origin}/miniapp`;
+      }
+    }
+
+    function getMiniappBaseUrl() {
+      return normalizeMiniappPublicUrl(ADMIN_CONFIG.miniappPublicUrl);
+    }
+
+    async function loadPublicAdminConfig() {
+      try {
+        const response = await fetch('/api/public-config');
+        const data = await response.json().catch(() => ({}));
+        if (response.ok && data?.ok && data.miniappPublicUrl) {
+          ADMIN_CONFIG.miniappPublicUrl = data.miniappPublicUrl;
+        }
+      } catch (error) {
+        console.warn('Public admin config warning', error);
+      }
+      updateMiniappUrl();
+      updateMiniappButtonPreview();
+    }
+
     function getMiniappTrackingUrl(flow = 'measure') {
       const cleanFlow = flow === 'estimate' ? 'estimate' : 'measure';
       const baseContent = slugPart(el('utmContent')?.value, 'post_1');
-      const url = new URL('/miniapp', window.location.origin);
+      const url = new URL(getMiniappBaseUrl());
       url.searchParams.set('flow', cleanFlow);
       url.searchParams.set('mode', cleanFlow);
       url.searchParams.set('source', 'max_group');
@@ -2634,7 +2665,7 @@
     });
 
     function getMiniappUrl() {
-      return `${window.location.origin}/miniapp`;
+      return getMiniappBaseUrl();
     }
 
     function updateMiniappUrl() {
@@ -2659,6 +2690,7 @@
 
     updateMiniappUrl();
     updateMiniappButtonPreview();
+    loadPublicAdminConfig();
     updateWebhookUrl();
     setupCollapsibleCards();
     setupActiveSideNav();

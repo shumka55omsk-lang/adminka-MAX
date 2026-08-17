@@ -22,11 +22,11 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v34-miniapp-post-integration',
-  builtAt: '2026-08-17T14:15:00+06:00',
+  version: 'v35-zamer55-domain',
+  builtAt: '2026-08-17T15:57:00+06:00',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
-  reason: 'Vercel Hobby router + integrated mini app CTA buttons in MAX advertising posts with UTM and direct flow selection'
+  reason: 'Vercel Hobby router + public mini app domain www.zamer55.ru for MAX advertising post buttons'
 };
 
 const routes = new Map([
