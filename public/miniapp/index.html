@@ -640,9 +640,46 @@
       calculate();
     }
 
+    function getMaxWebApp() {
+      const candidate = window.WebApp || window.MAX?.WebApp || window.Max?.WebApp || window.max?.WebApp || state.webApp || null;
+      if (candidate && candidate !== state.webApp) state.webApp = candidate;
+      return state.webApp;
+    }
+
+    function getQueryParamFrom(text, key) {
+      try {
+        const value = String(text || '').replace(/^#/, '').replace(/^\?/, '');
+        if (!value || !value.includes('=')) return '';
+        return String(new URLSearchParams(value).get(key) || '').trim();
+      } catch {
+        return '';
+      }
+    }
+
+    function getCurrentSearchParam(key) {
+      return getQueryParamFrom(window.location.search, key) || getQueryParamFrom(window.location.hash, key);
+    }
+
+    function getInitDataParam(key) {
+      const app = getMaxWebApp();
+      return getQueryParamFrom(app?.initData || '', key);
+    }
+
     function getOpenAppPayload() {
-      const unsafe = state.webApp?.initDataUnsafe || {};
-      return String(unsafe.start_param || unsafe.startParam || unsafe.payload || '').trim();
+      const app = getMaxWebApp();
+      const unsafe = app?.initDataUnsafe || {};
+      const candidates = [
+        unsafe.start_param, unsafe.startParam, unsafe.payload, unsafe.start_payload,
+        app?.startParam, app?.start_param, app?.payload, app?.startPayload,
+        getInitDataParam('start_param'), getInitDataParam('startParam'), getInitDataParam('payload'),
+        getCurrentSearchParam('start_param'), getCurrentSearchParam('startParam'), getCurrentSearchParam('payload'),
+        getCurrentSearchParam('miniapp_payload')
+      ];
+      for (const candidate of candidates) {
+        const value = String(candidate || '').trim();
+        if (value) return value;
+      }
+      return '';
     }
 
     function decodeBase64Url(value) {
@@ -655,30 +692,67 @@
       }
     }
 
-    function parseMiniappStartPayload() {
-      const payload = getOpenAppPayload();
+    function normalizePayloadFlow(value) {
+      const flow = String(value || '').trim().toLowerCase();
+      return flow === 'estimate' || flow === 'measure' ? flow : '';
+    }
+
+    function parseMiniappStartPayload(rawPayload = '') {
+      const payload = String(rawPayload || getOpenAppPayload() || '').trim();
       if (!payload) return {};
+
       if (payload.startsWith('m_')) {
         try {
           const decoded = decodeBase64Url(payload.slice(2));
           const parsed = JSON.parse(decoded || '{}');
           return {
-            flow: parsed.f === 'estimate' ? 'estimate' : (parsed.f === 'measure' ? 'measure' : ''),
-            campaign: String(parsed.c || '').trim(),
-            content: String(parsed.p || '').trim(),
-            medium: String(parsed.m || '').trim()
+            flow: normalizePayloadFlow(parsed.f || parsed.flow || parsed.mode),
+            campaign: String(parsed.c || parsed.campaign || '').trim(),
+            content: String(parsed.p || parsed.content || '').trim(),
+            medium: String(parsed.m || parsed.medium || '').trim()
           };
         } catch {
           return {};
         }
       }
+
+      if (payload.includes('=')) {
+        try {
+          const params = new URLSearchParams(payload.replace(/^#/, '').replace(/^\?/, ''));
+          return {
+            flow: normalizePayloadFlow(params.get('f') || params.get('flow') || params.get('mode')),
+            campaign: String(params.get('c') || params.get('utm_campaign') || params.get('campaign') || '').trim(),
+            content: String(params.get('p') || params.get('utm_content') || params.get('content') || '').trim(),
+            medium: String(params.get('m') || params.get('utm_medium') || params.get('medium') || '').trim()
+          };
+        } catch {
+          return {};
+        }
+      }
+
+      // Запасной компактный формат: f-measure__c-campaign__p-post__m-medium
+      if (payload.includes('__')) {
+        const result = {};
+        payload.split('__').forEach((part) => {
+          const index = part.indexOf('-');
+          if (index <= 0) return;
+          const key = part.slice(0, index);
+          const value = part.slice(index + 1);
+          if (key === 'f') result.flow = normalizePayloadFlow(value);
+          if (key === 'c') result.campaign = value;
+          if (key === 'p') result.content = value;
+          if (key === 'm') result.medium = value;
+        });
+        if (result.flow || result.campaign || result.content || result.medium) return result;
+      }
+
       const tokens = payload.split('_');
       const getAfter = (key) => {
         const index = tokens.indexOf(key);
         return index >= 0 ? String(tokens[index + 1] || '').trim() : '';
       };
       return {
-        flow: getAfter('f'),
+        flow: normalizePayloadFlow(getAfter('f')),
         campaign: getAfter('c'),
         content: getAfter('p'),
         medium: getAfter('m')
@@ -687,7 +761,7 @@
 
     function getInitialFlowFromUrl() {
       const params = new URLSearchParams(window.location.search);
-      const flow = String(params.get('flow') || params.get('mode') || '').trim().toLowerCase();
+      const flow = String(params.get('flow') || params.get('mode') || params.get('f') || '').trim().toLowerCase();
       if (flow === 'estimate' || flow === 'measure') return flow;
       const payloadFlow = String(parseMiniappStartPayload().flow || '').trim().toLowerCase();
       return payloadFlow === 'estimate' || payloadFlow === 'measure' ? payloadFlow : '';
@@ -741,16 +815,22 @@
     function getAttribution() {
       const params = new URLSearchParams(window.location.search);
       const payload = parseMiniappStartPayload();
-      const flow = payload.flow === 'estimate' ? 'estimate' : (payload.flow === 'measure' ? 'measure' : '');
-      const pick = (key, fallback = '') => String(params.get(key) || fallback || '').trim().slice(0, 160);
+      const flow = payload.flow === 'estimate' ? 'estimate' : (payload.flow === 'measure' ? 'measure' : getInitialFlowFromUrl());
+      const pick = (key, fallback = '') => String(params.get(key) || getCurrentSearchParam(key) || fallback || '').trim().slice(0, 160);
+      const campaign = pick('utm_campaign', pick('c', payload.campaign || ''));
+      const rawContent = pick('utm_content', pick('p', payload.content || ''));
+      const medium = pick('utm_medium', pick('m', payload.medium || 'max_group'));
+      const source = pick('source', pick('utm_source', campaign || rawContent ? 'max_group' : 'max_miniapp'));
+      const content = rawContent && !rawContent.endsWith(`_${flow}`) && flow ? `${rawContent}_${flow}` : rawContent;
       return {
-        source: pick('source', pick('utm_source', payload.campaign ? 'max_group' : 'max_miniapp')),
-        utm_source: pick('utm_source', pick('source', payload.campaign ? 'max_group' : 'max_miniapp')),
-        utm_medium: pick('utm_medium', payload.medium || ''),
-        utm_campaign: pick('utm_campaign', payload.campaign || ''),
-        utm_content: pick('utm_content', payload.content ? `${payload.content}_${flow || 'open_app'}` : ''),
-        utm_term: pick('utm_term', flow === 'estimate' ? 'known_sizes' : (flow === 'measure' ? 'free_measure' : '')),
+        source,
+        utm_source: pick('utm_source', source || 'max_miniapp'),
+        utm_medium: medium,
+        utm_campaign: campaign,
+        utm_content: content,
+        utm_term: pick('utm_term', flow === 'estimate' ? 'known_sizes' : (flow === 'measure' ? 'free_measure' : 'open_app')),
         ref_chat_id: pick('ref_chat_id', ''),
+        open_app_payload: getOpenAppPayload(),
         landing_url: window.location.href
       };
     }
@@ -839,12 +919,15 @@
 
     async function trackVisit(eventType = 'miniapp_open') {
       try {
+        state.attribution = getAttribution();
+        const app = getMaxWebApp();
         const payload = {
           eventType,
           visitorId: state.visitorId,
           visitId: state.visitId,
           attribution: state.attribution,
-          initData: state.webApp?.initData || '',
+          openAppPayload: getOpenAppPayload(),
+          initData: app?.initData || '',
           initDataUnsafe: getInitDataUnsafe(),
           landingUrl: window.location.href,
           referrer: document.referrer || '',
@@ -879,16 +962,17 @@
     }
 
     function getInitDataUnsafe() {
-      return state.webApp?.initDataUnsafe || {};
+      return getMaxWebApp()?.initDataUnsafe || {};
     }
 
     function initMax() {
       try {
+        const app = getMaxWebApp();
         const user = getInitDataUnsafe()?.user;
         if (user?.first_name && !$('name').value) $('name').value = user.first_name;
-        if (state.webApp?.ready) state.webApp.ready();
-        if (state.webApp?.expand) state.webApp.expand();
-        if (state.webApp?.enableClosingConfirmation) state.webApp.enableClosingConfirmation();
+        if (app?.ready) app.ready();
+        if (app?.expand) app.expand();
+        if (app?.enableClosingConfirmation) app.enableClosingConfirmation();
       } catch (e) {
         console.warn('MAX Bridge init warning', e);
       }
@@ -1131,6 +1215,8 @@
       }
       $('submitBtn').disabled = true;
       status('Отправляем заявку...', 'info');
+      state.attribution = getAttribution();
+      const app = getMaxWebApp();
 
       try {
         const response = await fetch('/api/miniapp-submit', {
@@ -1139,9 +1225,10 @@
           body: JSON.stringify({
             source: state.attribution.source || 'max-miniapp-soft-windows-v33',
             attribution: state.attribution,
+            openAppPayload: getOpenAppPayload(),
             visitorId: state.visitorId,
             visitId: state.visitId,
-            initData: state.webApp?.initData || '',
+            initData: app?.initData || '',
             initDataUnsafe: getInitDataUnsafe(),
             contact: state.contact,
             form,
