@@ -629,6 +629,23 @@
       btn.textContent = state.leadMode === 'estimate' ? 'Узнать стоимость и заказать замер' : 'Заказать бесплатный замер';
     }
 
+    function applyLeadMode(mode) {
+      const cleanMode = mode === 'estimate' ? 'estimate' : 'measure';
+      state.leadMode = cleanMode;
+      if ($('leadMode')) $('leadMode').value = cleanMode;
+      document.querySelectorAll('#modeChoices .mode-card').forEach((card) => {
+        card.classList.toggle('active', card.dataset.mode === cleanMode);
+      });
+      updateSubmitText();
+      calculate();
+    }
+
+    function getInitialFlowFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const flow = String(params.get('flow') || params.get('mode') || '').trim().toLowerCase();
+      return flow === 'estimate' || flow === 'measure' ? flow : '';
+    }
+
     function showStep(step) {
       const visibleSteps = getVisibleSteps();
       let requested = Number(step) || visibleSteps[0];
@@ -1119,12 +1136,7 @@
 
     document.querySelectorAll('#modeChoices .mode-card').forEach((btn) => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('#modeChoices .mode-card').forEach((x) => x.classList.remove('active'));
-        btn.classList.add('active');
-        state.leadMode = btn.dataset.mode || 'measure';
-        if ($('leadMode')) $('leadMode').value = state.leadMode;
-        updateSubmitText();
-        calculate();
+        applyLeadMode(btn.dataset.mode || 'measure');
       });
     });
 
@@ -1169,7 +1181,9 @@
     $('successWaLink')?.addEventListener('click', (e) => { e.preventDefault(); safeOpenLink(e.currentTarget.href); });
     $('successTgLink')?.addEventListener('click', (e) => { e.preventDefault(); safeOpenLink(e.currentTarget.href); });
 
-    showStep(1);
+    const initialFlow = getInitialFlowFromUrl();
+    if (initialFlow) applyLeadMode(initialFlow);
+    showStep(initialFlow ? 2 : 1);
     updateSubmitText();
     addWindow({});
     initVisitorIds();

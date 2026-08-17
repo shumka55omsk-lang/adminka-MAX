@@ -22,11 +22,11 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v33-two-client-flows',
-  builtAt: '2026-08-17T13:18:00+06:00',
+  version: 'v34-miniapp-post-integration',
+  builtAt: '2026-08-17T14:15:00+06:00',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
-  reason: 'Vercel Hobby router + two mini app client flows: free measurement or estimate by known sizes'
+  reason: 'Vercel Hobby router + integrated mini app CTA buttons in MAX advertising posts with UTM and direct flow selection'
 };
 
 const routes = new Map([

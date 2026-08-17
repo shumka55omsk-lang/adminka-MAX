@@ -1038,7 +1038,7 @@
     <section class="hero">
       <div class="hero-grid">
         <div>
-          <div class="hero-badge">MAX Admin · v28</div>
+          <div class="hero-badge">MAX Admin · v34</div>
           <h1 class="hero-title">Удобная панель управления рассылками, заявками и mini app MAX</h1>
           <p class="hero-text">Добавил боковое меню, быстрый дашборд, сворачиваемые разделы и более удобную структуру для ежедневной работы с постами, группами, заявками и аудиториями.</p>
           <div class="hero-meta">
@@ -1074,9 +1074,9 @@
       <div id="topStatusDot" class="top-status-dot"></div>
       <div>
         <div id="topStatusTitle" class="top-status-title">Статус: готово</div>
-        <div id="topStatusMessage" class="top-status-message">Готово к работе. v28: рост, календарь, шаблоны, рейтинг групп, квиз, антиспам и экспорты.</div>
+        <div id="topStatusMessage" class="top-status-message">Готово к работе. v34: mini app интегрирован в рекламные посты MAX двумя CTA-кнопками.</div>
       </div>
-      <div class="version-badge">v28</div>
+      <div class="version-badge">v34</div>
       <div id="topStatusTime" class="top-status-time">—</div>
     </div>
 
@@ -1253,17 +1253,31 @@
       <div style="height:12px"></div>
       <label style="display:flex;gap:10px;align-items:center;margin:0 0 12px">
         <input id="addMiniappButton" type="checkbox" checked style="width:auto;margin:0" />
-        <span><b>Добавить кнопку “Рассчитать стоимость”</b></span>
+        <span><b>Добавить кнопки мини-приложения в рекламный пост</b></span>
       </label>
       <div class="grid">
-        <input id="miniappButtonText" placeholder="Текст кнопки" value="Рассчитать стоимость" />
-        <input id="utmCampaign" placeholder="UTM кампания, например besedki_july" value="soft_windows_post" />
+        <div>
+          <label for="miniappButtonMode">Какие кнопки добавить</label>
+          <select id="miniappButtonMode">
+            <option value="both" selected>2 кнопки: замер + стоимость</option>
+            <option value="measure">Только “Заказать бесплатный замер”</option>
+            <option value="estimate">Только “Узнать стоимость”</option>
+          </select>
+        </div>
+        <div>
+          <label for="utmCampaign">UTM кампания</label>
+          <input id="utmCampaign" placeholder="Например: besedki_avgust" value="soft_windows_post" />
+        </div>
+      </div>
+      <div class="grid">
+        <input id="measureButtonText" placeholder="Кнопка замера" value="Заказать бесплатный замер" />
+        <input id="estimateButtonText" placeholder="Кнопка расчёта" value="Узнать стоимость" />
       </div>
       <div class="grid">
         <input id="utmContent" placeholder="UTM content / номер поста" value="post_1" />
         <input id="utmMedium" placeholder="UTM medium" value="max_group" />
       </div>
-      <p class="sub" id="miniappButtonPreview" style="margin-top:10px">Ссылка мини-приложения будет сформирована автоматически.</p>
+      <p class="sub" id="miniappButtonPreview" style="margin-top:10px">Ссылки мини-приложения будут сформированы автоматически.</p>
       <p class="sub" style="margin-top:10px">MAX принимает в кнопках только ссылки формата http:// или https://. Телефон лучше писать прямо в тексте поста: 48-98-78.</p>
     </section>
 
@@ -1461,37 +1475,52 @@
         .slice(0, 80) || fallback;
     }
 
-    function getMiniappTrackingUrl() {
+    function getMiniappTrackingUrl(flow = 'measure') {
+      const cleanFlow = flow === 'estimate' ? 'estimate' : 'measure';
+      const baseContent = slugPart(el('utmContent')?.value, 'post_1');
       const url = new URL('/miniapp', window.location.origin);
+      url.searchParams.set('flow', cleanFlow);
+      url.searchParams.set('mode', cleanFlow);
       url.searchParams.set('source', 'max_group');
       url.searchParams.set('utm_source', 'max_group');
       url.searchParams.set('utm_medium', slugPart(el('utmMedium')?.value, 'max_group'));
       url.searchParams.set('utm_campaign', slugPart(el('utmCampaign')?.value, 'soft_windows_post'));
-      url.searchParams.set('utm_content', slugPart(el('utmContent')?.value, 'post_1'));
+      url.searchParams.set('utm_content', `${baseContent}_${cleanFlow}`);
+      url.searchParams.set('utm_term', cleanFlow === 'estimate' ? 'known_sizes' : 'free_measure');
       return url.toString();
+    }
+
+    function getMiniappPostButtons() {
+      if (!el('addMiniappButton')?.checked) return [];
+      const mode = el('miniappButtonMode')?.value || 'both';
+      const measureText = el('measureButtonText')?.value.trim() || 'Заказать бесплатный замер';
+      const estimateText = el('estimateButtonText')?.value.trim() || 'Узнать стоимость';
+      const miniButtons = [];
+      if (mode === 'both' || mode === 'measure') miniButtons.push([measureText, getMiniappTrackingUrl('measure')]);
+      if (mode === 'both' || mode === 'estimate') miniButtons.push([estimateText, getMiniappTrackingUrl('estimate')]);
+      return miniButtons;
     }
 
     function updateMiniappButtonPreview() {
       const box = el('miniappButtonPreview');
       if (!box) return;
-      if (!el('addMiniappButton')?.checked) {
-        box.textContent = 'Кнопка “Рассчитать стоимость” отключена.';
+      const miniButtons = getMiniappPostButtons();
+      if (!miniButtons.length) {
+        box.textContent = 'Кнопки мини-приложения отключены.';
         return;
       }
-      box.textContent = `Кнопка: “${el('miniappButtonText')?.value || 'Рассчитать стоимость'}” → ${getMiniappTrackingUrl()}`;
+      box.innerHTML = miniButtons.map(([text, url]) => `Кнопка: “${escapeHtml(text)}” → ${escapeHtml(url)}`).join('<br>');
     }
 
     function getButtons() {
       const buttons = [];
       const invalid = [];
       const map = [
+        ...getMiniappPostButtons(),
         ['WhatsApp', el('whatsapp').value.trim()],
         ['Telegram', el('telegram').value.trim()],
         ['Сайт', el('site').value.trim()]
       ];
-      if (el('addMiniappButton')?.checked) {
-        map.unshift([el('miniappButtonText')?.value.trim() || 'Рассчитать стоимость', getMiniappTrackingUrl()]);
-      }
       for (const [text, url] of map) {
         if (!url) continue;
         if (!isHttpUrl(url)) {
@@ -2033,10 +2062,17 @@
       const pad = (n) => String(n).padStart(2, '0');
       el('scheduledAt').value = `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
       if (Array.isArray(item.buttons)) {
-        const mini = item.buttons.find((b) => String(b.url || '').includes('/miniapp'));
-        if (mini) {
+        const miniButtons = item.buttons.filter((b) => String(b.url || '').includes('/miniapp'));
+        if (miniButtons.length) {
           el('addMiniappButton').checked = true;
-          el('miniappButtonText').value = mini.text || 'Рассчитать стоимость';
+          const hasMeasure = miniButtons.some((b) => String(b.url || '').includes('flow=measure') || String(b.url || '').includes('mode=measure'));
+          const hasEstimate = miniButtons.some((b) => String(b.url || '').includes('flow=estimate') || String(b.url || '').includes('mode=estimate'));
+          if (el('miniappButtonMode')) el('miniappButtonMode').value = hasMeasure && hasEstimate ? 'both' : (hasEstimate ? 'estimate' : 'measure');
+          const measure = miniButtons.find((b) => String(b.url || '').includes('flow=measure') || String(b.url || '').includes('mode=measure'));
+          const estimate = miniButtons.find((b) => String(b.url || '').includes('flow=estimate') || String(b.url || '').includes('mode=estimate'));
+          if (measure && el('measureButtonText')) el('measureButtonText').value = measure.text || 'Заказать бесплатный замер';
+          if (estimate && el('estimateButtonText')) el('estimateButtonText').value = estimate.text || 'Узнать стоимость';
+          updateMiniappButtonPreview();
         }
       }
       setStatus('Пост скопирован в редактор. Выберите новое время и нажмите “Запланировать пост”.', 'ok');
@@ -2592,7 +2628,7 @@
     el('exportGroupsBtn')?.addEventListener('click', () => downloadReport('groups'));
     el('exportYandexPhonesBtn')?.addEventListener('click', () => downloadYandexAudience('plain'));
     el('exportYandexHashBtn')?.addEventListener('click', () => downloadYandexAudience('sha256'));
-    ['addMiniappButton','miniappButtonText','utmCampaign','utmContent','utmMedium'].forEach((id) => {
+    ['addMiniappButton','miniappButtonMode','measureButtonText','estimateButtonText','utmCampaign','utmContent','utmMedium'].forEach((id) => {
       el(id)?.addEventListener('input', updateMiniappButtonPreview);
       el(id)?.addEventListener('change', updateMiniappButtonPreview);
     });
