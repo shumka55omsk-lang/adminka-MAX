@@ -1270,6 +1270,19 @@
         </div>
       </div>
       <div class="grid">
+        <div>
+          <label for="miniappButtonType">Как открывать mini app</label>
+          <select id="miniappButtonType">
+            <option value="short_link" selected>Короткая ссылка /z и /s — безопасно для MAX</option>
+            <option value="open_app">Open App — экспериментально, если mini app подключён к боту</option>
+          </select>
+        </div>
+        <div>
+          <label for="maxOpenAppWebApp">Web App / username бота для Open App</label>
+          <input id="maxOpenAppWebApp" placeholder="id550507026940_bot" value="id550507026940_bot" />
+        </div>
+      </div>
+      <div class="grid">
         <input id="measureButtonText" placeholder="Кнопка замера" value="Заказать бесплатный замер" />
         <input id="estimateButtonText" placeholder="Кнопка расчёта" value="Узнать стоимость" />
       </div>
@@ -1278,7 +1291,7 @@
         <input id="utmMedium" placeholder="UTM medium" value="max_group" />
       </div>
       <p class="sub" id="miniappButtonPreview" style="margin-top:10px">Ссылки мини-приложения будут сформированы автоматически.</p>
-      <p class="sub" style="margin-top:10px">MAX принимает в кнопках только ссылки формата http:// или https://. Телефон лучше писать прямо в тексте поста: 48-98-78.</p>
+      <p class="sub" style="margin-top:10px">Для iPhone используйте короткие ссылки /z и /s: в окне MAX будет короткий адрес. Open App включайте только после настройки mini app в боте MAX.</p>
     </section>
 
     <section class="card">
@@ -1383,7 +1396,11 @@
   <script>
     const el = (id) => document.getElementById(id);
     const HISTORY_KEY = 'max_admin_send_history_v3_fallback';
-    const ADMIN_CONFIG = { miniappPublicUrl: 'https://www.zamer55.ru/miniapp' };
+    const ADMIN_CONFIG = {
+      miniappPublicUrl: 'https://www.zamer55.ru/miniapp',
+      miniappButtonType: 'short_link',
+      maxOpenAppWebApp: 'id550507026940_bot'
+    };
     let loadedTemplates = [];
 
     const fallbackTemplates = [
@@ -1496,14 +1513,30 @@
       try {
         const response = await fetch('/api/public-config');
         const data = await response.json().catch(() => ({}));
-        if (response.ok && data?.ok && data.miniappPublicUrl) {
-          ADMIN_CONFIG.miniappPublicUrl = data.miniappPublicUrl;
+        if (response.ok && data?.ok) {
+          if (data.miniappPublicUrl) ADMIN_CONFIG.miniappPublicUrl = data.miniappPublicUrl;
+          if (data.miniappButtonType) ADMIN_CONFIG.miniappButtonType = data.miniappButtonType;
+          if (data.maxOpenAppWebApp) ADMIN_CONFIG.maxOpenAppWebApp = data.maxOpenAppWebApp;
+          if (el('miniappButtonType')) el('miniappButtonType').value = ADMIN_CONFIG.miniappButtonType;
+          if (el('maxOpenAppWebApp')) el('maxOpenAppWebApp').value = ADMIN_CONFIG.maxOpenAppWebApp;
         }
       } catch (error) {
         console.warn('Public admin config warning', error);
       }
       updateMiniappUrl();
       updateMiniappButtonPreview();
+    }
+
+    function asciiSlugPart(value, fallback) {
+      return String(value || fallback || '')
+        .trim()
+        .replace(/\s+/g, '_')
+        .replace(/[^a-zA-Z0-9_\-]/g, '')
+        .slice(0, 64) || fallback;
+    }
+
+    function getMiniappOrigin() {
+      try { return new URL(getMiniappBaseUrl()).origin; } catch { return window.location.origin; }
     }
 
     function getMiniappTrackingUrl(flow = 'measure') {
@@ -1521,14 +1554,59 @@
       return url.toString();
     }
 
+    function getMiniappShortUrl(flow = 'measure') {
+      const cleanFlow = flow === 'estimate' ? 'estimate' : 'measure';
+      const path = cleanFlow === 'estimate' ? '/s' : '/z';
+      const url = new URL(path, getMiniappOrigin());
+      url.searchParams.set('c', asciiSlugPart(el('utmCampaign')?.value, 'soft_windows_post'));
+      url.searchParams.set('p', asciiSlugPart(el('utmContent')?.value, 'post_1'));
+      url.searchParams.set('m', asciiSlugPart(el('utmMedium')?.value, 'max_group'));
+      return url.toString();
+    }
+
+    function base64UrlEncode(value) {
+      try {
+        return btoa(value).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+      } catch {
+        return '';
+      }
+    }
+
+    function getMiniappOpenAppPayload(flow = 'measure') {
+      const cleanFlow = flow === 'estimate' ? 'estimate' : 'measure';
+      const payload = {
+        f: cleanFlow,
+        c: asciiSlugPart(el('utmCampaign')?.value, 'soft_windows_post'),
+        p: asciiSlugPart(el('utmContent')?.value, 'post_1'),
+        m: asciiSlugPart(el('utmMedium')?.value, 'max_group')
+      };
+      return 'm_' + base64UrlEncode(JSON.stringify(payload)).slice(0, 220);
+    }
+
+    function getMiniappButtonType() {
+      return el('miniappButtonType')?.value === 'open_app' ? 'open_app' : 'short_link';
+    }
+
+    function getOpenAppWebApp() {
+      const raw = String(el('maxOpenAppWebApp')?.value || ADMIN_CONFIG.maxOpenAppWebApp || 'id550507026940_bot').trim();
+      return /^[a-zA-Z0-9_]+_bot$/.test(raw) ? raw : 'id550507026940_bot';
+    }
+
     function getMiniappPostButtons() {
       if (!el('addMiniappButton')?.checked) return [];
       const mode = el('miniappButtonMode')?.value || 'both';
+      const buttonType = getMiniappButtonType();
       const measureText = el('measureButtonText')?.value.trim() || 'Заказать бесплатный замер';
       const estimateText = el('estimateButtonText')?.value.trim() || 'Узнать стоимость';
       const miniButtons = [];
-      if (mode === 'both' || mode === 'measure') miniButtons.push([measureText, getMiniappTrackingUrl('measure')]);
-      if (mode === 'both' || mode === 'estimate') miniButtons.push([estimateText, getMiniappTrackingUrl('estimate')]);
+      const make = (text, flow) => {
+        if (buttonType === 'open_app') {
+          return { text, type: 'open_app', web_app: getOpenAppWebApp(), payload: getMiniappOpenAppPayload(flow), previewUrl: getMiniappShortUrl(flow) };
+        }
+        return { text, type: 'link', url: getMiniappShortUrl(flow), fullUrl: getMiniappTrackingUrl(flow) };
+      };
+      if (mode === 'both' || mode === 'measure') miniButtons.push(make(measureText, 'measure'));
+      if (mode === 'both' || mode === 'estimate') miniButtons.push(make(estimateText, 'estimate'));
       return miniButtons;
     }
 
@@ -1540,7 +1618,12 @@
         box.textContent = 'Кнопки мини-приложения отключены.';
         return;
       }
-      box.innerHTML = miniButtons.map(([text, url]) => `Кнопка: “${escapeHtml(text)}” → ${escapeHtml(url)}`).join('<br>');
+      box.innerHTML = miniButtons.map((btn) => {
+        if (btn.type === 'open_app') {
+          return `Open App: “${escapeHtml(btn.text)}” → web_app=${escapeHtml(btn.web_app)} · payload=${escapeHtml(btn.payload)}`;
+        }
+        return `Короткая кнопка: “${escapeHtml(btn.text)}” → ${escapeHtml(btn.url)}<br><span class="muted">после открытия переведёт на mini app с UTM</span>`;
+      }).join('<br>');
     }
 
     function getButtons() {
@@ -1548,17 +1631,28 @@
       const invalid = [];
       const map = [
         ...getMiniappPostButtons(),
-        ['WhatsApp', el('whatsapp').value.trim()],
-        ['Telegram', el('telegram').value.trim()],
-        ['Сайт', el('site').value.trim()]
+        { text: 'WhatsApp', type: 'link', url: el('whatsapp').value.trim() },
+        { text: 'Telegram', type: 'link', url: el('telegram').value.trim() },
+        { text: 'Сайт', type: 'link', url: el('site').value.trim() }
       ];
-      for (const [text, url] of map) {
+      for (const item of map) {
+        const text = String(item.text || '').trim();
+        if (!text) continue;
+        if (item.type === 'open_app') {
+          if (!/^[a-zA-Z0-9_]+_bot$/.test(String(item.web_app || ''))) {
+            invalid.push(`${text}: некорректный web_app для open_app`);
+            continue;
+          }
+          buttons.push({ text, type: 'open_app', web_app: item.web_app, payload: item.payload || '' });
+          continue;
+        }
+        const url = String(item.url || '').trim();
         if (!url) continue;
         if (!isHttpUrl(url)) {
           invalid.push(`${text}: ${url}`);
           continue;
         }
-        buttons.push({ text, url });
+        buttons.push({ text, type: 'link', url });
       }
       return { buttons, invalid };
     }
@@ -2659,7 +2753,7 @@
     el('exportGroupsBtn')?.addEventListener('click', () => downloadReport('groups'));
     el('exportYandexPhonesBtn')?.addEventListener('click', () => downloadYandexAudience('plain'));
     el('exportYandexHashBtn')?.addEventListener('click', () => downloadYandexAudience('sha256'));
-    ['addMiniappButton','miniappButtonMode','measureButtonText','estimateButtonText','utmCampaign','utmContent','utmMedium'].forEach((id) => {
+    ['addMiniappButton','miniappButtonMode','miniappButtonType','maxOpenAppWebApp','measureButtonText','estimateButtonText','utmCampaign','utmContent','utmMedium'].forEach((id) => {
       el(id)?.addEventListener('input', updateMiniappButtonPreview);
       el(id)?.addEventListener('change', updateMiniappButtonPreview);
     });

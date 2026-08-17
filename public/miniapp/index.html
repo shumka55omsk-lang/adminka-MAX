@@ -640,10 +640,57 @@
       calculate();
     }
 
+    function getOpenAppPayload() {
+      const unsafe = state.webApp?.initDataUnsafe || {};
+      return String(unsafe.start_param || unsafe.startParam || unsafe.payload || '').trim();
+    }
+
+    function decodeBase64Url(value) {
+      try {
+        const normalized = String(value || '').replace(/-/g, '+').replace(/_/g, '/');
+        const padded = normalized + '='.repeat((4 - normalized.length % 4) % 4);
+        return atob(padded);
+      } catch {
+        return '';
+      }
+    }
+
+    function parseMiniappStartPayload() {
+      const payload = getOpenAppPayload();
+      if (!payload) return {};
+      if (payload.startsWith('m_')) {
+        try {
+          const decoded = decodeBase64Url(payload.slice(2));
+          const parsed = JSON.parse(decoded || '{}');
+          return {
+            flow: parsed.f === 'estimate' ? 'estimate' : (parsed.f === 'measure' ? 'measure' : ''),
+            campaign: String(parsed.c || '').trim(),
+            content: String(parsed.p || '').trim(),
+            medium: String(parsed.m || '').trim()
+          };
+        } catch {
+          return {};
+        }
+      }
+      const tokens = payload.split('_');
+      const getAfter = (key) => {
+        const index = tokens.indexOf(key);
+        return index >= 0 ? String(tokens[index + 1] || '').trim() : '';
+      };
+      return {
+        flow: getAfter('f'),
+        campaign: getAfter('c'),
+        content: getAfter('p'),
+        medium: getAfter('m')
+      };
+    }
+
     function getInitialFlowFromUrl() {
       const params = new URLSearchParams(window.location.search);
       const flow = String(params.get('flow') || params.get('mode') || '').trim().toLowerCase();
-      return flow === 'estimate' || flow === 'measure' ? flow : '';
+      if (flow === 'estimate' || flow === 'measure') return flow;
+      const payloadFlow = String(parseMiniappStartPayload().flow || '').trim().toLowerCase();
+      return payloadFlow === 'estimate' || payloadFlow === 'measure' ? payloadFlow : '';
     }
 
     function showStep(step) {
@@ -693,14 +740,16 @@
 
     function getAttribution() {
       const params = new URLSearchParams(window.location.search);
+      const payload = parseMiniappStartPayload();
+      const flow = payload.flow === 'estimate' ? 'estimate' : (payload.flow === 'measure' ? 'measure' : '');
       const pick = (key, fallback = '') => String(params.get(key) || fallback || '').trim().slice(0, 160);
       return {
-        source: pick('source', pick('utm_source', 'max_miniapp')),
-        utm_source: pick('utm_source', pick('source', 'max_miniapp')),
-        utm_medium: pick('utm_medium', ''),
-        utm_campaign: pick('utm_campaign', ''),
-        utm_content: pick('utm_content', ''),
-        utm_term: pick('utm_term', ''),
+        source: pick('source', pick('utm_source', payload.campaign ? 'max_group' : 'max_miniapp')),
+        utm_source: pick('utm_source', pick('source', payload.campaign ? 'max_group' : 'max_miniapp')),
+        utm_medium: pick('utm_medium', payload.medium || ''),
+        utm_campaign: pick('utm_campaign', payload.campaign || ''),
+        utm_content: pick('utm_content', payload.content ? `${payload.content}_${flow || 'open_app'}` : ''),
+        utm_term: pick('utm_term', flow === 'estimate' ? 'known_sizes' : (flow === 'measure' ? 'free_measure' : '')),
         ref_chat_id: pick('ref_chat_id', ''),
         landing_url: window.location.href
       };
