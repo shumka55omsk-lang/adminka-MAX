@@ -22,11 +22,11 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v40-external-crm-sync',
-  builtAt: '2026-08-18T08:55:00+06:00',
+  version: 'v41-crm-sizes-visible',
+  builtAt: '2026-08-18T16:58:00+06:00',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
-  reason: 'Vercel Hobby router + external CRM Supabase sync for estimate leads via CRM_SUPABASE_URL'
+  reason: 'Vercel Hobby router + visible window sizes in external soft-windows CRM sync'
 };
 
 const routes = new Map([
