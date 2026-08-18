@@ -51,3 +51,17 @@ supabase/hotfix-v28-growth-suite.sql
 - `Узнать стоимость` → `/miniapp?flow=estimate&...utm...`
 
 Mini app считывает `flow`/`mode` из ссылки и сразу выбирает нужный сценарий. UTM сохраняются в визитах и заявках.
+
+
+## v39 Estimate to Soft Windows CRM
+
+Заявки из сценария **«Знаю размеры»** теперь дополнительно пишутся в основную CRM мягких окон: `clients`, `calculations`, `client_history`.
+
+Для работы в Vercel включите:
+
+```text
+CRM_INTEGRATION_ENABLED=true
+CRM_LEGACY_DIRECT_ENABLED=true
+```
+
+Сценарий **«Не знаю размеры»** остаётся в mini app CRM как заявка на бесплатный замер и не создаёт расчёт без размеров.

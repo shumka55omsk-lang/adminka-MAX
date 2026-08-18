@@ -22,11 +22,11 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v38-hide-client-attribution',
-  builtAt: '2026-08-17T19:30:00+06:00',
+  version: 'v39-estimate-to-soft-windows-crm',
+  builtAt: '2026-08-18T08:35:00+06:00',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
-  reason: 'Vercel Hobby router + open_app attribution preserved internally while all technical tracking UI is hidden from clients'
+  reason: 'Vercel Hobby router + estimate leads from MAX mini app are sent directly to soft-windows CRM clients/calculations/client_history'
 };
 
 const routes = new Map([
