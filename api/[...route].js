@@ -22,11 +22,11 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v39-estimate-to-soft-windows-crm',
-  builtAt: '2026-08-18T08:35:00+06:00',
+  version: 'v40-external-crm-sync',
+  builtAt: '2026-08-18T08:55:00+06:00',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
-  reason: 'Vercel Hobby router + estimate leads from MAX mini app are sent directly to soft-windows CRM clients/calculations/client_history'
+  reason: 'Vercel Hobby router + external CRM Supabase sync for estimate leads via CRM_SUPABASE_URL'
 };
 
 const routes = new Map([

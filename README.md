@@ -65,3 +65,18 @@ CRM_LEGACY_DIRECT_ENABLED=true
 ```
 
 Сценарий **«Не знаю размеры»** остаётся в mini app CRM как заявка на бесплатный замер и не создаёт расчёт без размеров.
+
+
+## v40: заявки ‘Знаю размеры’ в отдельную CRM мягких окон
+
+Если CRM мягких окон работает на другой Supabase-базе, добавьте в Vercel проекта adminka-MAX:
+
+```text
+CRM_SUPABASE_URL=<SUPABASE_URL из проекта CRM мягких окон>
+CRM_SUPABASE_SERVICE_ROLE_KEY=<SUPABASE_SERVICE_ROLE_KEY из проекта CRM мягких окон>
+CRM_REQUIRE_DEDICATED_SUPABASE=true
+CRM_INTEGRATION_ENABLED=true
+CRM_LEGACY_DIRECT_ENABLED=true
+```
+
+Иначе заявка сохранится в MAX-админке, но не появится в старой CRM, потому что в базе adminka-MAX нет таблиц `clients`, `calculations`, `client_history`.
