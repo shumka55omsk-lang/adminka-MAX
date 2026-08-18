@@ -413,7 +413,7 @@
     <section class="hero">
       <div class="badge">🟢 Бесплатный замер · Мягкие окна Омск</div>
       <h1>Заказать бесплатный замер мягких окон</h1>
-      <p class="subtitle">Выберите объект, добавьте размеры и фото проёма. Мы быстро свяжемся с вами, уточним детали и подготовим точный расчёт.</p>
+      <p class="subtitle">Выберите объект, укажите контакты, а если размеры известны — добавьте проёмы для предварительного расчёта. Мы быстро свяжемся с вами и уточним детали.</p>
       <div class="hero-metrics">
         <div class="hero-metric"><b>ПВХ 700 мкм</b><span>для беседок и террас</span></div>
         <div class="hero-metric"><b>Замер</b><span>Омск и область</span></div>
@@ -501,10 +501,12 @@
       </div>
       <input id="mountingType" type="hidden" value="С монтажом" />
       <input id="needInstall" type="hidden" value="1" />
-      <div class="pill-row" id="zipperChoices" style="margin-top:8px;">
-        <button class="pill active" type="button" data-value="Молнии не нужны" data-zippers="0">Без молний</button>
-        <button class="pill" type="button" data-value="Нужны молнии" data-zippers="1">Нужны молнии</button>
+      <h3 class="section-title" style="margin-top:16px;font-size:16px;">Тип изделий</h3>
+      <div class="pill-row" id="openingTypeChoices" style="margin-top:8px;">
+        <button class="pill active" type="button" data-value="Глухие">Глухие</button>
+        <button class="pill" type="button" data-value="Открывающиеся">Открывающиеся</button>
       </div>
+      <input id="openingType" type="hidden" value="Глухие" />
       <input id="needZippers" type="hidden" value="0" />
 
       <div class="summary">
@@ -519,7 +521,7 @@
       </div>
       <div class="breakdown" id="breakdown">Добавьте размеры, чтобы увидеть расчёт.</div>
       <div id="priceSource" class="mini-note" style="display:none" aria-hidden="true"></div>
-      <div class="mini-note">Это предварительный расчёт. Точная цена зависит от крепления, окантовки, молний, сложности доступа и замера.</div>
+      <div class="mini-note">Это предварительный расчёт. Точная цена зависит от крепления, окантовки, сложности доступа и замера.</div>
     </section>
 
     <section class="card quiz-step" data-step="5" data-title="Фото">
@@ -538,21 +540,15 @@
 
     <section class="card quiz-step" data-step="6" data-title="Комментарий и отправка">
       <h2 class="section-title">Комментарий и отправка</h2>
-      <textarea id="comment" placeholder="Например: есть уклон крыши, нужна дверь на молнии, крепить к дереву, старые скобы уже стоят"></textarea>
-      <div class="link-row">
-        <a class="link-btn" href="https://wa.me/79039812452" id="waLink">WhatsApp</a>
-        <a class="link-btn" href="https://t.me/Anvar_company" id="tgLink">Telegram</a>
-      </div>
+      <textarea id="comment" placeholder="Например: есть уклон крыши, крепить к дереву, старые скобы уже стоят, нужен проём для входа"></textarea>
+      <!-- Кнопки WhatsApp/Telegram убраны по требованию: заявка отправляется только через mini app. -->
     </section>
 
     <section class="card success-card" id="successCard">
       <div class="success-icon">✅</div>
       <h2 class="success-title">Заявка принята</h2>
       <p class="mini-note" id="successNote">Заявка принята. Обычно отвечаем в течение 10–30 минут.</p>
-      <div class="link-row">
-        <a class="link-btn" href="https://wa.me/79039812452" id="successWaLink">Написать в WhatsApp</a>
-        <a class="link-btn" href="https://t.me/Anvar_company" id="successTgLink">Написать в Telegram</a>
-      </div>
+      <!-- Кнопки связи после отправки скрыты, чтобы клиент оставался в воронке заявки. -->
     </section>
 
     <section class="actions">
@@ -616,7 +612,10 @@
     }
 
     function getVisibleSteps() {
-      return state.leadMode === 'estimate' ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 5, 6];
+      // Фото больше не показываем клиенту.
+      // measure: цель → объект → контакты → комментарий/отправка
+      // estimate: цель → объект → контакты → размеры/тип изделий → комментарий/отправка
+      return state.leadMode === 'estimate' ? [1, 2, 3, 4, 6] : [1, 2, 3, 6];
     }
 
     function updateSubmitText() {
@@ -1052,7 +1051,7 @@
       const openingsCount = windows.reduce((sum, w) => sum + w.count, 0);
       const objectFactor = Number($('objectFactor').value || 1);
       const needInstall = $('needInstall').value === '1';
-      const needZippers = $('needZippers').value === '1';
+      const needZippers = false;
       const base = area * CONFIG.pricePerM2 * objectFactor;
       const install = needInstall ? area * CONFIG.installPerM2 : 0;
       const zippers = needZippers ? openingsCount * CONFIG.zipperPerOpening : 0;
@@ -1188,7 +1187,8 @@
         address: $('address').value.trim(),
         objectType: $('objectType').value,
         mountingType: isEstimateMode ? $('mountingType').value : 'Нужен бесплатный замер',
-        needZippers: isEstimateMode ? $('needZippers').value === '1' : false,
+        openingType: isEstimateMode ? $('openingType').value : '',
+        needZippers: false,
         expectedDate: $('expectedDate').value,
         comment: $('comment').value.trim(),
         windows: isEstimateMode ? estimate.windows : []
@@ -1222,8 +1222,8 @@
             contact: state.contact,
             form,
             estimate,
-            photoDataUrl: state.photoDataUrl,
-            photoInfo: state.photoInfo,
+            photoDataUrl: '',
+            photoInfo: null,
             antiSpam: {
               website: $('website')?.value || '',
               startedAt: state.visitId
@@ -1285,11 +1285,12 @@
       });
     });
 
-    document.querySelectorAll('#zipperChoices .pill').forEach((btn) => {
+    document.querySelectorAll('#openingTypeChoices .pill').forEach((btn) => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('#zipperChoices .pill').forEach((x) => x.classList.remove('active'));
+        document.querySelectorAll('#openingTypeChoices .pill').forEach((x) => x.classList.remove('active'));
         btn.classList.add('active');
-        $('needZippers').value = btn.dataset.zippers;
+        $('openingType').value = btn.dataset.value || 'Глухие';
+        $('needZippers').value = '0';
         calculate();
       });
     });
@@ -1301,8 +1302,8 @@
     $('prevStepBtn')?.addEventListener('click', prevStep);
     $('photoInput').addEventListener('change', handlePhotoChange);
     $('removePhotoBtn').addEventListener('click', removePhoto);
-    $('waLink').addEventListener('click', (e) => { e.preventDefault(); safeOpenLink(e.currentTarget.href); });
-    $('tgLink').addEventListener('click', (e) => { e.preventDefault(); safeOpenLink(e.currentTarget.href); });
+    $('waLink')?.addEventListener('click', (e) => { e.preventDefault(); safeOpenLink(e.currentTarget.href); });
+    $('tgLink')?.addEventListener('click', (e) => { e.preventDefault(); safeOpenLink(e.currentTarget.href); });
     $('successWaLink')?.addEventListener('click', (e) => { e.preventDefault(); safeOpenLink(e.currentTarget.href); });
     $('successTgLink')?.addEventListener('click', (e) => { e.preventDefault(); safeOpenLink(e.currentTarget.href); });
 

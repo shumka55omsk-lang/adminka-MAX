@@ -22,11 +22,11 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v42-crm-sizes-exact',
-  builtAt: '2026-08-18T16:58:00+06:00',
+  version: 'v43-miniapp-flow-cleanup',
+  builtAt: '2026-08-18T19:56:00+06:00',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
-  reason: 'Vercel Hobby router + visible window sizes in external soft-windows CRM sync'
+  reason: 'Mini app flow cleanup: no photo steps/contact buttons, blind/opening type instead of zipper choice'
 };
 
 const routes = new Map([
