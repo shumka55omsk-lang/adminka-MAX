@@ -421,11 +421,7 @@
       </div>
     </section>
 
-    <section class="card" id="trackingCard" style="display:none">
-      <h2 class="section-title">Источник заявки</h2>
-      <div class="mini-note" id="trackingInfo">Заявка открыта из рекламного поста.</div>
-      <div class="mini-note" id="visitInfo">Переход будет сохранён для статистики рекламы.</div>
-    </section>
+    <!-- Служебная атрибуция заявки скрыта от клиента. Источник/кампания/пост сохраняются внутри заявки и CRM. -->
 
     <section class="quiz-progress" id="quizProgress">
       <div class="quiz-progress-top"><span id="quizStepText">Шаг 1 из 5</span><span id="quizStepTitle">Цель заявки</span></div>
@@ -836,14 +832,8 @@
     }
 
     function renderAttribution() {
+      // Служебные данные нужны только для CRM/статистики. Клиенту их не показываем.
       state.attribution = getAttribution();
-      const hasTracking = Boolean(state.attribution.utm_campaign || state.attribution.utm_content || state.attribution.source !== 'max_miniapp');
-      const card = $('trackingCard');
-      const info = $('trackingInfo');
-      if (card && info && hasTracking) {
-        card.style.display = '';
-        info.textContent = `Источник: ${state.attribution.source || '—'} · кампания: ${state.attribution.utm_campaign || '—'} · пост: ${state.attribution.utm_content || '—'}`;
-      }
     }
 
 
@@ -946,8 +936,7 @@
         });
         const data = await response.json().catch(() => ({}));
         state.visitSaved = Boolean(response.ok && data.ok && data.saved);
-        const info = $('visitInfo');
-        if (info) info.textContent = state.visitSaved ? `Переход сохранён: ${state.visitorId}` : 'Переход не сохранён: проверьте Supabase-таблицы аудитории.';
+        // Не показываем клиенту служебные статусы сохранения перехода.
       } catch (error) {
         console.warn('Visit tracking warning', error);
       }

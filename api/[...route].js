@@ -22,11 +22,11 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v37-openapp-attribution',
-  builtAt: '2026-08-17T19:12:00+06:00',
+  version: 'v38-hide-client-attribution',
+  builtAt: '2026-08-17T19:30:00+06:00',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
-  reason: 'Vercel Hobby router + open_app attribution fix for campaign/post tracking with short-link fallback'
+  reason: 'Vercel Hobby router + open_app attribution preserved internally while all technical tracking UI is hidden from clients'
 };
 
 const routes = new Map([
