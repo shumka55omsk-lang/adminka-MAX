@@ -22,11 +22,11 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v47-crm-safe-legacy-sync',
-  builtAt: '2026-08-19T14:05:00+06:00',
+  version: 'v49-fixed-v48-dashboard-total',
+  builtAt: '2026-08-19T15:35:00+06:00',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
-  reason: 'Adapt mini app calculated totals to the legacy soft-windows CRM calculation fields used by the dashboard'
+  reason: 'Fixed v48 archive: catch-all API version now matches CRM dashboard total JSON logic for soft-windows CRM'
 };
 
 const routes = new Map([
