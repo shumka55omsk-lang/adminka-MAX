@@ -22,11 +22,11 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v49-fixed-v48-dashboard-total',
-  builtAt: '2026-08-19T15:35:00+06:00',
+  version: 'v50-crm-opening-checkbox-fix',
+  builtAt: '2026-08-19T16:07:00+06:00',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
-  reason: 'Fixed v48 archive: catch-all API version now matches CRM dashboard total JSON logic for soft-windows CRM'
+  reason: 'Fix CRM dashboard total: pass legacy gluhie/openable checkbox flags into calculation items'
 };
 
 const routes = new Map([
