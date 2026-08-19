@@ -22,11 +22,11 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v51-crm-native-autosave-total',
-  builtAt: '2026-08-19T16:07:00+06:00',
+  version: 'v53-opening-coefficient-manufacturing-only',
+  builtAt: '2026-08-19T17:45:00+06:00',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
-  reason: 'Fix CRM dashboard total: pass legacy gluhie/openable checkbox flags into calculation items'
+  reason: 'Apply openable-window coefficient only to manufacturing; installation is added without multiplier'
 };
 
 const routes = new Map([
