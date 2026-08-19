@@ -22,7 +22,7 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v46-crm-legacy-total-adapter',
+  version: 'v47-crm-safe-legacy-sync',
   builtAt: '2026-08-19T14:05:00+06:00',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
