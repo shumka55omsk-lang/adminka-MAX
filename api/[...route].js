@@ -22,11 +22,11 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v44-crm-calculated-request',
-  builtAt: '2026-08-18T20:11:00+06:00',
+  version: 'v46-crm-legacy-total-adapter',
+  builtAt: '2026-08-19T14:05:00+06:00',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
-  reason: 'Hide client preliminary price and send calculated CRM request with install/opening options'
+  reason: 'Adapt mini app calculated totals to the legacy soft-windows CRM calculation fields used by the dashboard'
 };
 
 const routes = new Map([
