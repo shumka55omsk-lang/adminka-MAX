@@ -22,11 +22,11 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v43-miniapp-flow-cleanup',
-  builtAt: '2026-08-18T19:56:00+06:00',
+  version: 'v44-crm-calculated-request',
+  builtAt: '2026-08-18T20:11:00+06:00',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
-  reason: 'Mini app flow cleanup: no photo steps/contact buttons, blind/opening type instead of zipper choice'
+  reason: 'Hide client preliminary price and send calculated CRM request with install/opening options'
 };
 
 const routes = new Map([

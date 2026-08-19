@@ -514,14 +514,10 @@
           <div class="label">Площадь</div>
           <div class="value"><span id="area">0.00</span> м²</div>
         </div>
-        <div class="metric">
-          <div class="label">Предварительно</div>
-          <div class="value"><span id="total">0 ₽</span></div>
-        </div>
       </div>
-      <div class="breakdown" id="breakdown">Добавьте размеры, чтобы увидеть расчёт.</div>
+      <div class="breakdown" id="breakdown">Добавьте размеры, чтобы отправить заявку на расчёт.</div>
       <div id="priceSource" class="mini-note" style="display:none" aria-hidden="true"></div>
-      <div class="mini-note">Это предварительный расчёт. Точная цена зависит от крепления, окантовки, сложности доступа и замера.</div>
+      <div class="mini-note">Стоимость на экране не показываем: заявка уйдёт в CRM уже с расчётом для менеджера.</div>
     </section>
 
     <section class="card quiz-step" data-step="5" data-title="Фото">
@@ -621,7 +617,7 @@
     function updateSubmitText() {
       const btn = $('submitBtn');
       if (!btn) return;
-      btn.textContent = state.leadMode === 'estimate' ? 'Узнать стоимость и заказать замер' : 'Заказать бесплатный замер';
+      btn.textContent = state.leadMode === 'estimate' ? 'Отправить заявку на расчёт' : 'Заказать бесплатный замер';
     }
 
     function applyLeadMode(mode) {
@@ -1061,10 +1057,14 @@
       const low = total > 0 ? Math.round(total * 0.92 / 100) * 100 : 0;
       const high = total > 0 ? Math.round(total * 1.18 / 100) * 100 : 0;
       $('area').textContent = area.toFixed(2);
-      $('total').textContent = total > 0 ? `от ${money(low)} до ${money(high)} ₽` : '0 ₽';
-      $('breakdown').innerHTML = area > 0
-        ? 'Показан предварительный диапазон. Точную стоимость подтвердим после уточнения крепления, сложности проёма и замера.'
-        : 'Добавьте размеры, чтобы увидеть предварительный диапазон.';
+      const totalEl = $('total');
+      if (totalEl) totalEl.textContent = total > 0 ? `${money(total)} ₽` : '0 ₽';
+      const breakdownEl = $('breakdown');
+      if (breakdownEl) {
+        breakdownEl.innerHTML = area > 0
+          ? 'Размеры добавлены. После отправки заявка будет рассчитана в CRM для менеджера.'
+          : 'Добавьте размеры, чтобы отправить заявку на расчёт.';
+      }
 
       return {
         windows,
@@ -1188,6 +1188,7 @@
         objectType: $('objectType').value,
         mountingType: isEstimateMode ? $('mountingType').value : 'Нужен бесплатный замер',
         openingType: isEstimateMode ? $('openingType').value : '',
+        needInstall: isEstimateMode ? $('needInstall').value === '1' : false,
         needZippers: false,
         expectedDate: $('expectedDate').value,
         comment: $('comment').value.trim(),
