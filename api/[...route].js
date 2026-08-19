@@ -22,7 +22,7 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v50-crm-opening-checkbox-fix',
+  version: 'v51-crm-native-autosave-total',
   builtAt: '2026-08-19T16:07:00+06:00',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
