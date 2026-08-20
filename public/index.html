@@ -857,6 +857,13 @@
       border: 0;
     }
 
+    .lead-actions button.danger-action {
+      grid-column: 1 / -1;
+      background: #fff1f0;
+      color: var(--danger);
+      border: 1px solid #fecdca;
+    }
+
     .lead-full {
       grid-column: 1 / -1;
     }
@@ -1302,7 +1309,7 @@
     <section id="scheduleSection" class="card">
       <div class="card-head"><div><div class="card-kicker">Автоматизация</div><h2>Расписание отправки</h2><p class="sub">Планируйте публикации заранее и запускайте очередь вручную при необходимости.</p></div></div>
       <label class="title">Расписание отправки</label>
-      <p class="sub">Выбери дату и время, нажми “Запланировать”. Отправка произойдёт автоматически через Vercel Cron или внешний cron-сервис. Админку держать открытой не нужно.</p>
+      <p class="sub">Выбери дату и время, нажми “Запланировать”. Vercel Cron проверяет очередь каждые 15 минут, поэтому пост уйдёт автоматически без открытой админки. Если нужно отправить просроченные посты сразу — нажми “Запустить проверку сейчас”.</p>
       <div class="grid" style="margin-top:12px">
         <input id="scheduledAt" type="datetime-local" />
         <button class="secondary" id="scheduleBtn" type="button">Запланировать пост</button>
@@ -1352,6 +1359,7 @@
       </div>
 
       <div id="crmBoard" class="lead-board muted">Введите пароль и нажмите “Обновить заявки”.</div>
+      <p class="sub" style="margin-top:10px">Кнопка “Удалить заявку” очищает запись из этого раздела админки MAX и не удаляет клиента из CRM мягких окон.</p>
       <div id="leadStats" class="history-list muted" style="margin-top:14px;display:none">Статистика ещё не загружена.</div>
       <p class="sub" style="margin-top:10px">Статусы и заметки сохраняются в Supabase. Если новые поля ещё не созданы, примените hotfix-crm-leads-board.sql.</p>
     </section>
@@ -2402,7 +2410,8 @@
     }
 
     function leadCardHtml(lead) {
-      const id = Number(lead.id || 0);
+      const id = String(lead.id || '');
+      const idJs = JSON.stringify(id);
       const status = normalizeCrmStatus(lead.crm_status || 'new');
       const statusLabel = CRM_STATUS_LABELS[status] || 'Новая';
       const created = lead.created_at ? new Date(lead.created_at).toLocaleString('ru-RU') : 'без даты';
@@ -2424,16 +2433,16 @@
       const telHref = phoneLink ? `tel:+${phoneLink}` : '';
 
       return `
-        <article class="lead-card" data-lead-id="${id}">
+        <article class="lead-card" data-lead-id="${escapeHtml(id)}">
           <div class="lead-top">
             <div>
               <div class="lead-name">${escapeHtml(name)}</div>
-              <div class="lead-meta">#${id || '—'} · ${escapeHtml(created)}</div>
+              <div class="lead-meta">#${id ? escapeHtml(id) : '—'} · ${escapeHtml(created)}</div>
             </div>
             <span class="lead-status ${status}">${escapeHtml(statusLabel)}</span>
           </div>
 
-          ${hasPhoto ? `<img class="lead-photo" src="${escapeHtml(lead.photo_data_url)}" alt="Фото заявки #${id}">` : ''}
+          ${hasPhoto ? `<img class="lead-photo" src="${escapeHtml(lead.photo_data_url)}" alt="Фото заявки #${escapeHtml(id)}">` : ''}
 
           <div class="lead-data">
             <div><b>Телефон</b>${phone ? escapeHtml(phone) : 'не указан'}</div>
@@ -2447,26 +2456,27 @@
           </div>
 
           <div>
-            <label class="title" for="leadStatus${id}">Статус заявки</label>
-            <select id="leadStatus${id}" data-lead-status="${id}">
+            <label class="title" for="leadStatus${escapeHtml(id)}">Статус заявки</label>
+            <select id="leadStatus${escapeHtml(id)}" data-lead-status="${escapeHtml(id)}">
               ${Object.entries(CRM_STATUS_LABELS).map(([key, label]) => `<option value="${key}" ${key === status ? 'selected' : ''}>${escapeHtml(label)}</option>`).join('')}
             </select>
           </div>
 
           <div>
-            <label class="title" for="leadNote${id}">Заметка менеджера</label>
-            <textarea class="lead-note" id="leadNote${id}" data-lead-note="${id}" placeholder="Например: позвонить завтра, ждёт замер, дорого...">${escapeHtml(note)}</textarea>
+            <label class="title" for="leadNote${escapeHtml(id)}">Заметка менеджера</label>
+            <textarea class="lead-note" id="leadNote${escapeHtml(id)}" data-lead-note="${escapeHtml(id)}" placeholder="Например: позвонить завтра, ждёт замер, дорого...">${escapeHtml(note)}</textarea>
           </div>
 
           <div>
-            <label class="title" for="leadNext${id}">Следующее действие</label>
-            <input id="leadNext${id}" data-lead-next="${id}" value="${escapeHtml(nextAction)}" placeholder="Например: позвонить 29.06 в 12:00" />
+            <label class="title" for="leadNext${escapeHtml(id)}">Следующее действие</label>
+            <input id="leadNext${escapeHtml(id)}" data-lead-next="${escapeHtml(id)}" value="${escapeHtml(nextAction)}" placeholder="Например: позвонить 29.06 в 12:00" />
           </div>
 
           <div class="lead-actions">
             ${waHref ? `<a href="${escapeHtml(waHref)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>` : '<button type="button" disabled>WhatsApp</button>'}
             ${telHref ? `<a href="${escapeHtml(telHref)}">Позвонить</a>` : '<button type="button" disabled>Позвонить</button>'}
-            <button class="primary-action" type="button" onclick="updateMiniappLead(${id})">Сохранить статус</button>
+            <button class="primary-action" type="button" onclick="updateMiniappLead(${idJs})">Сохранить статус</button>
+            <button class="danger-action" type="button" onclick="deleteMiniappLead(${idJs})">Удалить заявку</button>
           </div>
         </article>
       `;
@@ -2505,12 +2515,20 @@
       }
     }
 
+    function getLeadField(kind, id) {
+      const target = String(id || '');
+      return Array.from(document.querySelectorAll(`[data-lead-${kind}]`))
+        .find((node) => String(node.getAttribute(`data-lead-${kind}`) || '') === target);
+    }
+
     async function updateMiniappLead(id) {
+      id = String(id || '');
       try {
         if (!getPassword()) return setStatus('Введите пароль админки.', 'err');
-        const status = document.querySelector(`[data-lead-status="${id}"]`)?.value || 'new';
-        const note = document.querySelector(`[data-lead-note="${id}"]`)?.value || '';
-        const nextAction = document.querySelector(`[data-lead-next="${id}"]`)?.value || '';
+        if (!id) return setStatus('Некорректный id заявки.', 'err');
+        const status = getLeadField('status', id)?.value || 'new';
+        const note = getLeadField('note', id)?.value || '';
+        const nextAction = getLeadField('next', id)?.value || '';
         setStatus(`Сохраняю заявку #${id}...`);
         const data = await apiFetch('/api/miniapp-leads', {
           method: 'PATCH',
@@ -2521,6 +2539,24 @@
         setStatus(`Заявка #${id} сохранена. Режим: ${data.mode || 'full'}.`, 'ok');
       } catch (error) {
         setStatus(`Ошибка сохранения заявки #${id}:\n` + error.message, 'err');
+      }
+    }
+
+    async function deleteMiniappLead(id) {
+      id = String(id || '');
+      try {
+        if (!getPassword()) return setStatus('Введите пароль админки.', 'err');
+        if (!id) return setStatus('Некорректный id заявки.', 'err');
+        const card = Array.from(document.querySelectorAll('[data-lead-id]'))
+          .find((node) => String(node.getAttribute('data-lead-id') || '') === id);
+        const title = card?.querySelector('.lead-name')?.textContent?.trim() || `#${id}`;
+        if (!confirm(`Удалить заявку ${title}?\n\nОна исчезнет из раздела “Заявки из мини-приложения”. Клиента в CRM мягких окон это не удалит.`)) return;
+        setStatus(`Удаляю заявку #${id}...`);
+        const data = await apiFetch(`/api/miniapp-leads?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+        await loadMiniappLeads();
+        setStatus(`Заявка #${id} удалена. Удалено записей: ${data.deleted || 1}.`, 'ok');
+      } catch (error) {
+        setStatus(`Ошибка удаления заявки #${id}:\n` + error.message, 'err');
       }
     }
 

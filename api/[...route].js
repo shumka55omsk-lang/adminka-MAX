@@ -22,11 +22,11 @@ import webhookSubscription from '../lib/api/webhook-subscription.js';
 
 const VERSION = {
   ok: true,
-  version: 'v53-opening-coefficient-manufacturing-only',
-  builtAt: '2026-08-19T17:45:00+06:00',
+  version: 'v55-scheduled-posting-cron-fix',
+  builtAt: '2026-08-20T13:18:00+06:00',
   miniappUrl: '/miniapp',
   apiMode: 'single-catch-all-function',
-  reason: 'Apply openable-window coefficient only to manufacturing; installation is added without multiplier'
+  reason: 'Enable Vercel Cron for scheduled MAX posts and keep manual scheduler check in admin'
 };
 
 const routes = new Map([
